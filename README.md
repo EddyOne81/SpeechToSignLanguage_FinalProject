@@ -1,7 +1,3 @@
-Here is the English version of the README, professionally formatted for GitHub with all icons/emojis removed.
-
----
-
 # Speech-to-Sign Language System based on SignWriting
 
 **Bachelor Thesis in Software Engineering**
