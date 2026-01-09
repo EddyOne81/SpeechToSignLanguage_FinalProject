@@ -83,19 +83,6 @@ graph LR
 | **Database** | PostgreSQL | User data storage, FSW Caching |
 | **Data Standard** | FSW, .pose | SignWriting and Motion data standards |
 
-## Repository Structure
-
-```bash
-├── ai-service/             # Python FastAPI (ASR, Translation, Motion Gen)
-│   ├── models/             # Directory for pre-trained models
-│   └── src/                # Logic for handling FSW and .pose generation
-├── backend/                # Java Spring Boot (API Gateway, Business Logic)
-├── frontend/               # ReactJS Application
-│   ├── src/components/3d/  # R3F components & VRM Avatar loader
-│   └── src/utils/          # Pose file parsers & Kalidokit integration
-└── docker-compose.yml      # Container orchestration configuration
-
-```
 
 ## Technical Challenges & Solutions
 
