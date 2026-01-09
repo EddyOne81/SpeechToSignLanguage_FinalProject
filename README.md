@@ -10,7 +10,7 @@ Here is the English version of the README, professionally formatted for GitHub w
 
 ## Project Overview
 
-This project researches and implements a **Speech-to-Sign Language** system using **SignWriting** as the intermediate representation format. Unlike traditional approaches that rely on "Gloss" (which often leads to a loss of spatial information and non-manual markers), this system adopts a **Text-to-FSW (Formal SignWriting) -> 3D Animation** pipeline.
+This project researches and implements a **Speech-to-Sign Language** system using **SignWriting** as the intermediate representation format. Unlike traditional approaches that rely on "Gloss" (which often leads to a loss of spatial information and non-manual markers), this system adopts a **Text-to-FSW (Formal SignWriting) -> 2D Character Animation (SVG - Scalable Vector Graphics)** pipeline.
 
 The primary objective is to generate sign language gestures that are morphologically accurate (hand positioning, palm orientation, facial expressions) and scalable across different sign languages.
 
