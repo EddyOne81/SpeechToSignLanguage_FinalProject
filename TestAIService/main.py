@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 print("Đang nạp các mô hình Trí tuệ nhân tạo vào bộ nhớ...")
-asr_service = ASRService(model_size="base")
+asr_service = ASRService(model_size="small")
 translator_service = SignTranslationService()
 print("Hệ thống đã sẵn sàng tiếp nhận luồng dữ liệu.")
 

@@ -14,6 +14,8 @@ class ASRService:
         result = self.model.transcribe(
             audio_path,
             task="translate", 
+            language="vi",
+            temperature=0.0,
             fp16=False 
         )
         return result["text"].strip()
