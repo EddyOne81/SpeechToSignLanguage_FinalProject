@@ -1,5 +1,10 @@
+import os
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+
 import time
+import warnings
 from pathlib import Path
+warnings.filterwarnings("ignore")
 from functools import lru_cache
 
 # Import các thành phần từ thư viện gốc
