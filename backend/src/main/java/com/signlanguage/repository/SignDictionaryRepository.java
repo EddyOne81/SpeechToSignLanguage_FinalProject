@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.signlanguage.model.SignDictionary;
+import com.signlanguage.entity.SignDictionary;
 
 @Repository
 public interface SignDictionaryRepository extends JpaRepository<SignDictionary, Long> {
