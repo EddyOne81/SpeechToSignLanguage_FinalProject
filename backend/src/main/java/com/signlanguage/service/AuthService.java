@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import com.signlanguage.dto.AuthResponse;
 import com.signlanguage.dto.LoginRequest;
 import com.signlanguage.dto.RegisterRequest;
-import com.signlanguage.entity.User;
-import com.signlanguage.repository.UserRepository;
+import com.signlanguage.entity.UserSignLanguage;
+import com.signlanguage.repository.UserSLRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
+    private final UserSLRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -30,7 +30,7 @@ public class AuthService {
             throw new RuntimeException("Email already exists");
         }
 
-        User user = User.builder()
+        UserSignLanguage user = UserSignLanguage.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
@@ -53,7 +53,7 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
 
-        User user = userRepository.findByUsername(request.getUsername())
+        UserSignLanguage user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String token = jwtService.generateToken(user.getUsername(), user.getRole());
