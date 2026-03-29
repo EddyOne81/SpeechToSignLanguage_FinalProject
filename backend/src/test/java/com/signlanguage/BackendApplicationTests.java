@@ -1,4 +1,4 @@
-package com.signlanguage.backend;
+package com.signlanguage;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
