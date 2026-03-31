@@ -6,10 +6,12 @@ import numpy as np
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pose_format import Pose
+from pose_packager import PosePackager
 
 from asr_engine import ASRService
 from my_animator import FSWAnimator
+from translate_engine import SignTranslationService
+
 
 # Hệ thống ghi nhật ký (Logging)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -31,10 +33,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Khởi tạo các dịch vụ lõi
+# Khởi tạo các dịch vụ lõi toàn cục (Global Services Initialization)
 logger.info("Starting AI Services...")
 asr_service = ASRService(model_size="small")
 animator_service = FSWAnimator(fps=25, num_joints=52)
+packager_service = PosePackager()
+
+logger.info("Đang tải model Sockeye Text-to-FSW (Lần đầu sẽ mất 1-2 phút)...")
+sockeye_translator = SignTranslationService()
+logger.info("Sockeye model loaded successfully!")
 
 @app.post("/api/v1/translate/audio", tags=["Translation Engine"])
 async def translate_audio_to_sign(file: UploadFile = File(...)):
@@ -58,25 +65,33 @@ async def translate_audio_to_sign(file: UploadFile = File(...)):
         # Bước 2: Nhận dạng giọng nói (Whisper)
         recognized_text = asr_service.transcribe_and_translate(temp_audio_path)
         
-        # MÔ PHỎNG: Quá trình NMT sinh FSW
-        fsw_code = "M500x500S15a10494x487S15a18487x487S26500515x495S26510473x495" 
+        # Bước 3: Dịch Text -> FSW bằng mô hình Sockeye
+        logger.info(f"Đang phân tích và dịch ngữ nghĩa: '{recognized_text}'")
+        try:
+            fsw_code = sockeye_translator.translate(
+                text=recognized_text, 
+                spoken_lang="en", 
+                signed_lang="ase"
+            )
+            logger.info(f"Mã FSW sinh ra từ AI: {fsw_code}")
+        except Exception as e:
+            logger.error(f"Lỗi khi chạy Inference Sockeye: {str(e)}")
+            raise HTTPException(status_code=500, detail="Lỗi dịch thuật AI: Không thể nội suy FSW.")
 
-        # Bước 3: Nội suy động học (Sinh ma trận .pose)
-        logger.info("3D kinematic interpolation is in progress....")
-        pose_bytes = animator_service.generate_pose_bytes(fsw_code)
+        if not fsw_code:
+            raise HTTPException(status_code=500, detail="Lỗi hệ thống: Mô hình AI trả về chuỗi FSW rỗng.")
+
+        # Bước 4: Nội suy động học (Sinh ma trận tọa độ trực tiếp)
+        logger.info("Đang tiến hành nội suy động học 3D...")
+        json_coordinates = animator_service.generate_coordinates(fsw_code)
         
-        if not pose_bytes:
-            raise HTTPException(status_code=500, detail="Internal error: Unable to generate animation data.")
+        if not json_coordinates:
+            raise HTTPException(status_code=500, detail="Lỗi nội bộ: Không thể sinh dữ liệu hoạt ảnh.")
 
-        # Bước 4: Trích xuất trực tiếp tọa độ thành JSON
-        pose_obj = Pose.read(pose_bytes)
-        frames_data = pose_obj.body.data
-        
-        # Chuyển ma trận Numpy (Frames x People x Joints x Dims) thành mảng Python thuần
-        # Dùng nan_to_num để đảm bảo JSON không sập vì các giá trị NaN/Infinity
-        json_coordinates = np.nan_to_num(frames_data[:, 0, :, :]).tolist() 
+        # Bước 4.5: Đóng gói thành file Nhị phân (Block 5.0)
+        pose_file_path = packager_service.package_to_binary(json_coordinates)
 
-        # Trả về kết quả tổng hợp
+        # Bước 5: Trả về kết quả JSON
         return JSONResponse(
             status_code=200,
             content={
@@ -84,18 +99,22 @@ async def translate_audio_to_sign(file: UploadFile = File(...)):
                 "data": {
                     "recognized_text_en": recognized_text,
                     "fsw_code": fsw_code,
+                    "pose_file_path": pose_file_path,
                     "pose_coordinates": json_coordinates,
-                    "fps": pose_obj.body.fps
+                    "fps": animator_service.fps
                 }
             }
         )
 
+    except HTTPException:
+        # Re-raise HTTP exceptions to maintain specific error codes and messages
+        raise
     except Exception as e:
         logger.error(f"System error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Data stream processing error: {str(e)}")
 
     finally:
-        # Bước 5: Dọn dẹp
+        # Bước 6: Dọn dẹp
         if temp_audio_path and os.path.exists(temp_audio_path):
             os.remove(temp_audio_path)
             logger.info("Temporary audio files have been cleaned up.")
