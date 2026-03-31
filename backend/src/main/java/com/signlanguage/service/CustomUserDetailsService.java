@@ -1,6 +1,10 @@
 package com.signlanguage.service;
 
-import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.signlanguage.entity.Permission;
+import com.signlanguage.entity.Role;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,10 +26,25 @@ public class CustomUserDetailsService implements UserDetailsService {
         UserSignLanguage user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
+        Set<SimpleGrantedAuthority> authorities = user.getRoles().stream()
+            .flatMap(role -> buildAuthorities(role).stream())
+            .collect(Collectors.toSet());
+
         return new User(
                 user.getUsername(),
                 user.getPasswordHash(),
-                Collections.singletonList(new SimpleGrantedAuthority(user.getRole()))
+            authorities
         );
     }
+
+        private Set<SimpleGrantedAuthority> buildAuthorities(Role role) {
+        Set<SimpleGrantedAuthority> roleAuthorities = Set.of(new SimpleGrantedAuthority(role.getCode()));
+        Set<SimpleGrantedAuthority> permissionAuthorities = role.getPermissions().stream()
+            .map(Permission::getCode)
+            .map(SimpleGrantedAuthority::new)
+            .collect(Collectors.toSet());
+
+        return java.util.stream.Stream.concat(roleAuthorities.stream(), permissionAuthorities.stream())
+            .collect(Collectors.toSet());
+        }
 }
