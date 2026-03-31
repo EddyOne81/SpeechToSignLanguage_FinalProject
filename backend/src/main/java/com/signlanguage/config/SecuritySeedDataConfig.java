@@ -46,8 +46,6 @@ public class SecuritySeedDataConfig {
             Permission dictionaryRead = ensurePermission("DICTIONARY_READ", "Read dictionary", "DICTIONARY", "Search dictionary");
             Permission dictionaryWrite = ensurePermission("DICTIONARY_WRITE", "Write dictionary", "DICTIONARY", "Create, update and delete dictionary entries");
             Permission feedbackWrite = ensurePermission("FEEDBACK_WRITE", "Write feedback", "FEEDBACK", "Create feedback");
-            Permission notificationRead = ensurePermission("NOTIFICATION_READ", "Read notification", "NOTIFICATION", "Read notifications");
-            Permission notificationWrite = ensurePermission("NOTIFICATION_WRITE", "Write notification", "NOTIFICATION", "Create notifications");
 
             Role userRole = ensureRoleWithPermissions(
                     "ROLE_USER",
@@ -60,8 +58,7 @@ public class SecuritySeedDataConfig {
                             historyRead,
                             historyDelete,
                             dictionaryRead,
-                            feedbackWrite,
-                            notificationRead
+                            feedbackWrite
                     )
             );
 
@@ -77,9 +74,7 @@ public class SecuritySeedDataConfig {
                             historyDelete,
                             dictionaryRead,
                             dictionaryWrite,
-                            feedbackWrite,
-                            notificationRead,
-                            notificationWrite
+                            feedbackWrite
                     ))
             );
 

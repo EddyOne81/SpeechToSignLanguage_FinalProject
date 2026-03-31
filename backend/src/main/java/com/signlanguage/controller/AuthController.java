@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.signlanguage.dto.AuthResponse;
 import com.signlanguage.dto.LoginRequest;
 import com.signlanguage.dto.RegisterRequest;
+import com.signlanguage.exception.ApiResponses;
 import com.signlanguage.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -27,18 +27,18 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        return ApiResponses.ok(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        return ApiResponses.ok(authService.login(request));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> me(Authentication authentication) {
-        return ResponseEntity.ok(Map.of(
+    public ResponseEntity<?> me(Authentication authentication) {
+        return ApiResponses.ok(Map.of(
                 "username", authentication.getName(),
                 "authorities", authentication.getAuthorities()
         ));

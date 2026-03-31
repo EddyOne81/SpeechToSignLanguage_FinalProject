@@ -1,6 +1,7 @@
 package com.signlanguage.controller;
 
 import com.signlanguage.dto.UpsertDictionaryRequest;
+import com.signlanguage.exception.ApiResponses;
 import com.signlanguage.service.SignDictionaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -17,29 +18,29 @@ public class SignDictionaryController {
 
     @GetMapping
     public ResponseEntity<?> search(@RequestParam(value = "q", required = false) String q, Pageable pageable) {
-        return ResponseEntity.ok(signDictionaryService.search(q, pageable));
+        return ApiResponses.ok(signDictionaryService.search(q, pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(signDictionaryService.getById(id));
+        return ApiResponses.ok(signDictionaryService.getById(id));
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('DICTIONARY_WRITE')")
     public ResponseEntity<?> create(@RequestBody UpsertDictionaryRequest request) {
-        return ResponseEntity.ok(signDictionaryService.create(request));
+        return ApiResponses.ok(signDictionaryService.create(request));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('DICTIONARY_WRITE')")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UpsertDictionaryRequest request) {
-        return ResponseEntity.ok(signDictionaryService.update(id, request));
+        return ApiResponses.ok(signDictionaryService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('DICTIONARY_WRITE')")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        return ResponseEntity.ok(signDictionaryService.delete(id));
+        return ApiResponses.ok(signDictionaryService.delete(id));
     }
 }

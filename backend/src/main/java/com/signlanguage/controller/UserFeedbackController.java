@@ -3,6 +3,7 @@ package com.signlanguage.controller;
 import com.signlanguage.entity.TranslationHistory;
 import com.signlanguage.entity.UserFeedback;
 import com.signlanguage.entity.UserSignLanguage;
+import com.signlanguage.exception.ApiResponses;
 import com.signlanguage.repository.TranslationHistoryRepository;
 import com.signlanguage.repository.UserFeedbackRepository;
 import com.signlanguage.service.CurrentUserService;
@@ -30,7 +31,7 @@ public class UserFeedbackController {
     public ResponseEntity<?> getMyFeedbacks(Pageable pageable) {
         UserSignLanguage user = currentUserService.requireCurrentUser();
         Page<UserFeedback> page = feedbackRepository.findByUserUserIdOrderByCreatedAtDesc(user.getUserId(), pageable);
-        return ResponseEntity.ok(page.map(this::toResponse));
+        return ApiResponses.ok(page.map(this::toResponse));
     }
 
     @GetMapping("/me/{id}")
@@ -38,7 +39,7 @@ public class UserFeedbackController {
         UserSignLanguage user = currentUserService.requireCurrentUser();
         UserFeedback feedback = feedbackRepository.findByFeedbackIdAndUserUserId(id, user.getUserId())
                 .orElseThrow(() -> new RuntimeException("Feedback not found"));
-        return ResponseEntity.ok(toResponse(feedback));
+        return ApiResponses.ok(toResponse(feedback));
     }
 
     @PostMapping("/me")
@@ -55,7 +56,7 @@ public class UserFeedbackController {
                 .build();
 
         feedbackRepository.save(feedback);
-        return ResponseEntity.ok(toResponse(feedback));
+        return ApiResponses.ok(toResponse(feedback));
     }
 
     @PutMapping("/me/{id}")
@@ -77,20 +78,20 @@ public class UserFeedbackController {
         }
 
         feedbackRepository.save(feedback);
-        return ResponseEntity.ok(toResponse(feedback));
+        return ApiResponses.ok(toResponse(feedback));
     }
 
     @DeleteMapping("/me/{id}")
     public ResponseEntity<?> deleteMyFeedback(@PathVariable Long id) {
         UserSignLanguage user = currentUserService.requireCurrentUser();
         long deleted = feedbackRepository.deleteByFeedbackIdAndUserUserId(id, user.getUserId());
-        return ResponseEntity.ok(Map.of("deleted", deleted > 0));
+        return ApiResponses.ok(Map.of("deleted", deleted > 0));
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> getAll(Pageable pageable) {
-        return ResponseEntity.ok(feedbackRepository.findAll(pageable).map(this::toResponse));
+        return ApiResponses.ok(feedbackRepository.findAll(pageable).map(this::toResponse));
     }
 
     private Map<String, Object> toResponse(UserFeedback feedback) {

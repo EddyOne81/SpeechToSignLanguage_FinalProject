@@ -1,6 +1,7 @@
 package com.signlanguage.controller;
 
 import com.signlanguage.dto.UpsertPermissionRequest;
+import com.signlanguage.exception.ApiResponses;
 import com.signlanguage.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -18,26 +19,26 @@ public class PermissionController {
 
     @GetMapping
     public ResponseEntity<?> getAll(Pageable pageable) {
-        return ResponseEntity.ok(permissionService.getAll(pageable));
+        return ApiResponses.ok(permissionService.getAll(pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(permissionService.getById(id));
+        return ApiResponses.ok(permissionService.getById(id));
     }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody UpsertPermissionRequest request) {
-        return ResponseEntity.ok(permissionService.create(request));
+        return ApiResponses.ok(permissionService.create(request));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UpsertPermissionRequest request) {
-        return ResponseEntity.ok(permissionService.update(id, request));
+        return ApiResponses.ok(permissionService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        return ResponseEntity.ok(permissionService.delete(id));
+        return ApiResponses.ok(permissionService.delete(id));
     }
 }

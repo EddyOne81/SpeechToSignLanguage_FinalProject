@@ -3,6 +3,7 @@ package com.signlanguage.controller;
 import com.signlanguage.entity.SignDictionary;
 import com.signlanguage.entity.TranslationHistory;
 import com.signlanguage.entity.UserSignLanguage;
+import com.signlanguage.exception.ApiResponses;
 import com.signlanguage.repository.SignDictionaryRepository;
 import com.signlanguage.repository.TranslationHistoryRepository;
 import com.signlanguage.service.CurrentUserService;
@@ -30,7 +31,7 @@ public class TranslationHistoryController {
     public ResponseEntity<?> getMyHistories(Pageable pageable) {
         UserSignLanguage user = currentUserService.requireCurrentUser();
         Page<TranslationHistory> page = historyRepository.findByUserUserIdOrderByCreatedAtDesc(user.getUserId(), pageable);
-        return ResponseEntity.ok(page.map(this::toResponse));
+        return ApiResponses.ok(page.map(this::toResponse));
     }
 
     @GetMapping("/me/{id}")
@@ -38,7 +39,7 @@ public class TranslationHistoryController {
         UserSignLanguage user = currentUserService.requireCurrentUser();
         TranslationHistory history = historyRepository.findByHistoryIdAndUserUserId(id, user.getUserId())
                 .orElseThrow(() -> new RuntimeException("History not found"));
-        return ResponseEntity.ok(toResponse(history));
+        return ApiResponses.ok(toResponse(history));
     }
 
     @PostMapping("/me")
@@ -55,7 +56,7 @@ public class TranslationHistoryController {
                 .build();
 
         historyRepository.save(history);
-        return ResponseEntity.ok(toResponse(history));
+        return ApiResponses.ok(toResponse(history));
     }
 
     @PutMapping("/me/{id}")
@@ -81,27 +82,27 @@ public class TranslationHistoryController {
         }
 
         historyRepository.save(history);
-        return ResponseEntity.ok(toResponse(history));
+        return ApiResponses.ok(toResponse(history));
     }
 
     @DeleteMapping("/me/{id}")
     public ResponseEntity<?> deleteMyHistory(@PathVariable Long id) {
         UserSignLanguage user = currentUserService.requireCurrentUser();
         long deleted = historyRepository.deleteByHistoryIdAndUserUserId(id, user.getUserId());
-        return ResponseEntity.ok(Map.of("deleted", deleted > 0));
+        return ApiResponses.ok(Map.of("deleted", deleted > 0));
     }
 
     @DeleteMapping("/me")
     public ResponseEntity<?> deleteAllMyHistories() {
         UserSignLanguage user = currentUserService.requireCurrentUser();
         long deleted = historyRepository.deleteByUserUserId(user.getUserId());
-        return ResponseEntity.ok(Map.of("deletedCount", deleted));
+        return ApiResponses.ok(Map.of("deletedCount", deleted));
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> getAll(Pageable pageable) {
-        return ResponseEntity.ok(historyRepository.findAll(pageable).map(this::toResponse));
+        return ApiResponses.ok(historyRepository.findAll(pageable).map(this::toResponse));
     }
 
     private SignDictionary resolveWord(Long wordId) {
