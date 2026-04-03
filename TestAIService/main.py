@@ -6,11 +6,13 @@ import numpy as np
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pose_format import Pose
+from pose_packager import PosePackager
 
 from asr_engine import ASRService
 from translate_engine import SignTranslationService
 from my_animator import FSWAnimator
+from translate_engine import SignTranslationService
+
 
 # Hệ thống ghi nhật ký (Logging)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -32,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Khởi tạo các dịch vụ lõi
+# Khởi tạo các dịch vụ lõi toàn cục (Global Services Initialization)
 logger.info("Starting AI Services...")
 asr_service = ASRService(model_size="small")
 animator_service = FSWAnimator(fps=25, num_joints=52)
@@ -109,6 +111,7 @@ async def translate_audio_to_sign(file: UploadFile = File(...)):
                 "data": {
                     "recognized_text_en": recognized_text,
                     "fsw_code": fsw_code,
+                    "pose_file_path": pose_file_path,
                     "pose_coordinates": json_coordinates,
                     "fps": pose_obj.body.fps,
                     "rule_debug": rule_debug,

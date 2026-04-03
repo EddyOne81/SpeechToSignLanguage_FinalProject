@@ -659,26 +659,39 @@ class FSWAnimator:
         Chuyển đổi chuỗi FSW thành tệp nhị phân .pose và lưu trữ trực tiếp trên RAM.
         """
         if not fsw_string or not isinstance(fsw_string, str):
-            logger.error("Dữ liệu FSW đầu vào bị trống hoặc sai định dạng.")
-            raise ValueError("Chuỗi FSW không hợp lệ.")
-
-        try:
-            logger.info("Bắt đầu khởi tạo ma trận tọa độ khớp xương...")
-            header = self._create_pose_header()
-            frames_data = self._interpolate_kinematics(fsw_string)
+            frames_data = np.zeros((125, 1, self.num_joints, 2), dtype=np.float32)
+            for f in range(125): frames_data[f, 0] = neutral_pose
+            return frames_data
             
-            confidence_masks = np.ones(frames_data.shape[:-1], dtype=np.float32)
+        fsw_words = [word for word in fsw_string.split() if "S" in word]
+        if not fsw_words:
+            frames_data = np.zeros((125, 1, self.num_joints, 2), dtype=np.float32)
+            for f in range(125): frames_data[f, 0] = neutral_pose
+            return frames_data
+
+        transition_frames = 20  
+        hold_frames = 35        
+        total_frames = (transition_frames + hold_frames) * len(fsw_words) + transition_frames
+        
+        frames_data = np.zeros((total_frames, 1, self.num_joints, 2), dtype=np.float32)
+        target_poses = [self._parse_fsw_word_to_pose(word, neutral_pose) for word in fsw_words]
+        
+        current_frame = 0
+        start_pose = np.copy(neutral_pose) 
+        
+        for end_pose in target_poses:
+            for f in range(transition_frames):
+                t = f / transition_frames
+                frames_data[current_frame, 0] = (1 - t) * start_pose + t * end_pose
+                current_frame += 1
+            for f in range(hold_frames):
+                frames_data[current_frame, 0] = end_pose
+                current_frame += 1
+            start_pose = np.copy(end_pose)
             
-            body = NumPyPoseBody(fps=self.fps, data=frames_data, confidence=confidence_masks)
-            pose = Pose(header, body)
-
-            with io.BytesIO() as buffer:
-                pose.write(buffer)
-                pose_bytes = buffer.getvalue()
-                
-            logger.info(f"Biên dịch tệp .pose thành công. Dung lượng: {len(pose_bytes)} bytes.")
-            return pose_bytes
-
-        except Exception as e:
-            logger.error(f"Lỗi nghiêm trọng trong quá trình sinh hoạt ảnh: {str(e)}")
-            raise
+        for f in range(transition_frames):
+            t = f / transition_frames
+            frames_data[current_frame, 0] = (1 - t) * start_pose + t * neutral_pose
+            current_frame += 1
+            
+        return frames_data
