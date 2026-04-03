@@ -6,12 +6,11 @@ import numpy as np
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pose_packager import PosePackager
+from pose_format import Pose
 
 from asr_engine import ASRService
 from translate_engine import SignTranslationService
 from my_animator import FSWAnimator
-from translate_engine import SignTranslationService
 
 
 # Hệ thống ghi nhật ký (Logging)
@@ -102,6 +101,7 @@ async def translate_audio_to_sign(file: UploadFile = File(...)):
         # Chuyển ma trận Numpy (Frames x People x Joints x Dims) thành mảng Python thuần
         # Dùng nan_to_num để đảm bảo JSON không sập vì các giá trị NaN/Infinity
         json_coordinates = np.nan_to_num(frames_data[:, 0, :, :]).tolist() 
+        pose_file_path = None
 
         # Trả về kết quả tổng hợp
         return JSONResponse(
