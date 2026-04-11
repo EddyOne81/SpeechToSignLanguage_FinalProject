@@ -1,21 +1,26 @@
 import os
 import tempfile
 import logging
-from typing import Optional
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
 import numpy as np
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel
 from pose_format import Pose
 
 from asr_engine import ASRService
-from translate_engine import SignTranslationService
-from my_animator import FSWAnimator
 
 
 # Hệ thống ghi nhật ký (Logging)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+SIGN_MT_POSE_API = "https://us-central1-sign-mt.cloudfunctions.net/spoken_text_to_signed_pose"
+BACKEND_PUBLIC_BASE_URL = os.getenv("BACKEND_PUBLIC_BASE_URL", "http://127.0.0.1:8000")
 
 # Khởi tạo FastAPI
 app = FastAPI(
@@ -36,25 +41,143 @@ app.add_middleware(
 # Khởi tạo các dịch vụ lõi toàn cục (Global Services Initialization)
 logger.info("Starting AI Services...")
 asr_service = ASRService(model_size="small")
-animator_service = FSWAnimator(fps=25, num_joints=52)
-translator_service: Optional[SignTranslationService] = None
 
 
-def get_translator_service() -> SignTranslationService:
+class TextToSignRequest(BaseModel):
+    text: str
+    spoken_lang: str = "en"
+    signed_lang: str = "ase"
+
+
+def fetch_sign_mt_pose_bytes(text: str, spoken_lang: str = "en", signed_lang: str = "ase") -> bytes:
     """
-    Lazy-load translator để giảm thời gian khởi động API.
+    Gọi Sign-MT cloud function để lấy trực tiếp file nhị phân .pose.
     """
-    global translator_service
-    if translator_service is None:
-        logger.info("Loading text-to-FSW translation model...")
-        translator_service = SignTranslationService()
-        logger.info("Text-to-FSW translation model loaded successfully.")
-    return translator_service
+    query = urlencode({
+        "text": text,
+        "spoken": spoken_lang,
+        "signed": signed_lang,
+    })
+    request_url = f"{SIGN_MT_POSE_API}?{query}"
+    req = Request(request_url, method="GET", headers={"Accept": "application/pose"})
+
+    try:
+        with urlopen(req, timeout=60) as response:
+            pose_bytes = response.read()
+            content_type = response.headers.get("Content-Type", "")
+
+            if not pose_bytes:
+                raise HTTPException(status_code=502, detail="Sign-MT API returned an empty pose payload.")
+
+            if "pose" not in content_type.lower() and "octet-stream" not in content_type.lower():
+                logger.warning("Unexpected Sign-MT content type: %s", content_type)
+
+            return pose_bytes
+    except HTTPError as err:
+        logger.error("Sign-MT HTTP error: status=%s, reason=%s", err.code, err.reason)
+        raise HTTPException(status_code=502, detail=f"Sign-MT API error ({err.code}).") from err
+    except URLError as err:
+        logger.error("Sign-MT connection error: %s", err)
+        raise HTTPException(status_code=502, detail="Unable to connect to Sign-MT API.") from err
+
+
+def build_pose_source_url(text: str, spoken_lang: str = "en", signed_lang: str = "ase") -> str:
+    query = urlencode({
+        "text": text,
+        "spoken": spoken_lang,
+        "signed": signed_lang,
+    })
+    return f"{BACKEND_PUBLIC_BASE_URL}/api/v1/pose?{query}"
+
+
+def build_pose_response_payload(text: str, spoken_lang: str = "en", signed_lang: str = "ase") -> dict:
+    """
+    Gọi Sign-MT và chuẩn hóa dữ liệu pose để trả cho frontend render skeleton.
+    """
+    pose_bytes = fetch_sign_mt_pose_bytes(
+        text=text,
+        spoken_lang=spoken_lang,
+        signed_lang=signed_lang,
+    )
+
+    pose_obj = Pose.read(pose_bytes)
+    frames_data = pose_obj.body.data
+
+    json_coordinates = np.nan_to_num(
+        frames_data[:, 0, :, :],
+        nan=0.0,
+        posinf=0.0,
+        neginf=0.0,
+    ).tolist()
+
+    frame_count = len(json_coordinates)
+    point_count = len(json_coordinates[0]) if frame_count > 0 else 0
+    pose_source_url = build_pose_source_url(text, spoken_lang, signed_lang)
+
+    return {
+        "recognized_text_en": text,
+        "fsw_code": "",
+        "pose_coordinates": json_coordinates,
+        "pose_source_url": pose_source_url,
+        "fps": pose_obj.body.fps,
+        "rule_debug": {
+            "source": "sign-mt-cloud",
+            "endpoint": SIGN_MT_POSE_API,
+            "pose_source_url": pose_source_url,
+            "frame_count": frame_count,
+            "point_count": point_count,
+            "spoken_lang": spoken_lang,
+            "signed_lang": signed_lang,
+        },
+    }
+
+
+@app.get("/api/v1/pose", tags=["Translation Engine"])
+async def get_pose_file(text: str, spoken: str = "en", signed: str = "ase"):
+    """
+    Proxy endpoint trả trực tiếp file nhị phân .pose cho frontend pose-viewer.
+    """
+    clean_text = text.strip()
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="Text input cannot be empty.")
+
+    try:
+        pose_bytes = fetch_sign_mt_pose_bytes(clean_text, spoken, signed)
+        return Response(content=pose_bytes, media_type="application/pose")
+    except HTTPException:
+        raise
+    except Exception as err:
+        logger.error("System error in pose proxy endpoint: %s", err)
+        raise HTTPException(status_code=500, detail=f"Pose proxy error: {err}") from err
+
+
+@app.post("/api/v1/translate/text", tags=["Translation Engine"])
+async def translate_text_to_sign(request: TextToSignRequest):
+    """
+    API Endpoint xử lý nhanh: Text -> Sign-MT Pose -> JSON Coordinates.
+    """
+    text = request.text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Text input cannot be empty.")
+
+    try:
+        logger.info("Processing direct text translation: %s", text)
+        payload = build_pose_response_payload(
+            text=text,
+            spoken_lang=request.spoken_lang,
+            signed_lang=request.signed_lang,
+        )
+        return JSONResponse(status_code=200, content={"status": "success", "data": payload})
+    except HTTPException:
+        raise
+    except Exception as err:
+        logger.error("System error in text translation: %s", err)
+        raise HTTPException(status_code=500, detail=f"Text-to-sign processing error: {err}") from err
 
 @app.post("/api/v1/translate/audio", tags=["Translation Engine"])
 async def translate_audio_to_sign(file: UploadFile = File(...)):
     """
-    API Endpoint xử lý toàn bộ luồng dữ liệu: Audio -> Text -> FSW -> JSON Coordinates
+    API Endpoint xử lý toàn bộ luồng dữ liệu: Audio -> Text -> Sign-MT Pose -> JSON Coordinates
     """
     # Input Validation
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.webm')):
@@ -76,46 +199,19 @@ async def translate_audio_to_sign(file: UploadFile = File(...)):
         if not recognized_text:
             raise HTTPException(status_code=500, detail="ASR returned empty text.")
 
-        # Bước 3: Dịch Text -> FSW bằng signwriting-translation
-        fsw_code = get_translator_service().translate(
+        # Bước 3: Gọi Sign-MT để lấy file pose trực tiếp từ spoken text
+        payload = build_pose_response_payload(
             text=recognized_text,
             spoken_lang="en",
             signed_lang="ase",
         )
-
-        if not fsw_code:
-            raise HTTPException(status_code=500, detail="Text-to-FSW translation returned empty output.")
-
-        # Bước 4: Nội suy động học (Sinh ma trận .pose)
-        logger.info("3D kinematic interpolation is in progress....")
-        pose_bytes = animator_service.generate_pose_bytes(fsw_code)
-        rule_debug = animator_service.build_rule_debug_payload(fsw_code)
-        
-        if not pose_bytes:
-            raise HTTPException(status_code=500, detail="Internal error: Unable to generate animation data.")
-
-        # Bước 5: Trích xuất trực tiếp tọa độ thành JSON
-        pose_obj = Pose.read(pose_bytes)
-        frames_data = pose_obj.body.data
-        
-        # Chuyển ma trận Numpy (Frames x People x Joints x Dims) thành mảng Python thuần
-        # Dùng nan_to_num để đảm bảo JSON không sập vì các giá trị NaN/Infinity
-        json_coordinates = np.nan_to_num(frames_data[:, 0, :, :]).tolist() 
-        pose_file_path = None
 
         # Trả về kết quả tổng hợp
         return JSONResponse(
             status_code=200,
             content={
                 "status": "success",
-                "data": {
-                    "recognized_text_en": recognized_text,
-                    "fsw_code": fsw_code,
-                    "pose_file_path": pose_file_path,
-                    "pose_coordinates": json_coordinates,
-                    "fps": pose_obj.body.fps,
-                    "rule_debug": rule_debug,
-                }
+                "data": payload,
             }
         )
 

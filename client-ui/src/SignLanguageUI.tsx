@@ -13,50 +13,21 @@ import PoseViewer from "./PoseViewer";
 type PoseBuffer = {
   frames: number[][][];
   fps: number;
+  sourceUrl?: string;
 };
 
 type RuleDebugPayload = {
-  version: string;
-  handshape: string;
-  categories: Record<string, number>;
-  movement: {
-    group_id: number;
-    group_name: string;
-    pattern: string;
-    distance_scale: number;
-    curve_scale: number;
-    oscillation_scale: number;
-    vector_x: number;
-    vector_y: number;
-    direction: {
-      rotation_nibble: number;
-      angle_deg: number;
-      direction_16: string;
-      direction_8: string;
-      arrow_8: string;
-    };
-    trajectory_samples: Array<{
-      t: number;
-      x: number;
-      y: number;
-    }>;
-  };
-  symbols: Array<{
-    raw: string;
-    base: string;
-    category_name: string;
-    group_name: string;
-    direction: {
-      direction_16: string;
-      direction_8: string;
-      arrow_8: string;
-    };
-  }>;
+  source?: string;
+  endpoint?: string;
+  frame_count?: number;
+  point_count?: number;
+  [key: string]: unknown;
 };
 
 export default function SignLanguageUI() {
   // Quản lý trạng thái core
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [inputText, setInputText] = useState<string>("Hello");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -157,6 +128,75 @@ export default function SignLanguageUI() {
   };
 
   // --- LOGIC GỌI API GATEWAY ---
+  const applyTranslationResult = (data: any) => {
+    const {
+      recognized_text_en,
+      fsw_code,
+      pose_coordinates,
+      pose_source_url,
+      fps,
+      rule_debug,
+    } = data;
+
+    setTranscript(recognized_text_en);
+    setFswCode(fsw_code ?? "");
+    setPoseBuffer({
+      frames: pose_coordinates,
+      fps: fps,
+      sourceUrl: pose_source_url,
+    });
+    setRuleDebug(rule_debug ?? null);
+
+    console.log(
+      `[System] Đã nhận thành công ${pose_coordinates.length} khung hình JSON.`,
+    );
+  };
+
+  const startTextTranslation = async () => {
+    const text = inputText.trim();
+    if (!text) {
+      setErrorMsg("Vui lòng nhập text trước khi dịch.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setErrorMsg(null);
+    setTranscript("");
+    setFswCode("");
+    setPoseBuffer(null);
+    setRuleDebug(null);
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/v1/translate/text",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text,
+            spoken_lang: "en",
+            signed_lang: "ase",
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail || "Server connection failed.");
+      }
+
+      const result = await response.json();
+      applyTranslationResult(result.data);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || "Đã xảy ra lỗi không xác định.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const startTranslation = async () => {
     if (!audioFile) {
       setErrorMsg("Vui lòng tải lên tệp âm thanh hoặc ghi âm trực tiếp.");
@@ -188,22 +228,7 @@ export default function SignLanguageUI() {
       }
 
       const result = await response.json();
-      const {
-        recognized_text_en,
-        fsw_code,
-        pose_coordinates,
-        fps,
-        rule_debug,
-      } = result.data;
-
-      setTranscript(recognized_text_en);
-      setFswCode(fsw_code);
-      setPoseBuffer({ frames: pose_coordinates, fps: fps });
-      setRuleDebug(rule_debug ?? null);
-
-      console.log(
-        `[System] Đã nhận thành công ${pose_coordinates.length} khung hình JSON.`,
-      );
+      applyTranslationResult(result.data);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Đã xảy ra lỗi không xác định.");
@@ -241,11 +266,39 @@ export default function SignLanguageUI() {
               <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-xs mr-2">
                 Step 1
               </span>
-              Audio Input
+              Input Source
             </h3>
 
             {/* Vùng tải tệp và ghi âm */}
             <div className="flex flex-col gap-4">
+              <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+                  Quick Text Input
+                </p>
+                <textarea
+                  value={inputText}
+                  onChange={(event) => setInputText(event.target.value)}
+                  placeholder="Type English text. Example: Hello"
+                  className="w-full h-20 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+                <button
+                  onClick={startTextTranslation}
+                  disabled={isProcessing || !inputText.trim()}
+                  className={`mt-3 w-full text-white font-medium py-2.5 rounded-lg flex items-center justify-center transition-all ${isProcessing || !inputText.trim() ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-500"}`}>
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Translating Text...
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="w-4 h-4 mr-2" />
+                      Translate From Text
+                    </>
+                  )}
+                </button>
+              </div>
+
               {/* Vùng Dropzone Upload */}
               <label
                 className={`flex flex-col items-center justify-center w-full h-28 border-2 ${audioFile && !audioFile.name.includes("recorded_audio") ? "border-emerald-500 bg-emerald-500/5" : "border-slate-700 border-dashed hover:bg-slate-800/50 hover:border-emerald-500/50"} rounded-xl cursor-pointer transition-all`}>
@@ -281,7 +334,7 @@ export default function SignLanguageUI() {
 
               <div className="flex items-center text-xs text-slate-500 uppercase font-semibold">
                 <div className="flex-1 border-b border-slate-800"></div>
-                <span className="mx-4">OR</span>
+                <span className="mx-4">AUDIO</span>
                 <div className="flex-1 border-b border-slate-800"></div>
               </div>
 
@@ -391,11 +444,11 @@ export default function SignLanguageUI() {
             <div className="flex-1 flex flex-col bg-gradient-to-b from-slate-900 to-slate-950 p-6">
               <div className="h-28 bg-slate-950 rounded-xl border border-slate-800 p-4 overflow-y-auto relative group mb-4">
                 <div className="absolute top-2 right-2 bg-slate-800 text-slate-400 text-[10px] uppercase tracking-wider px-2 py-1 rounded">
-                  FSW data
+                  Pose Source
                 </div>
                 <p className="font-mono text-xs text-emerald-500/80 break-all leading-relaxed">
                   {fswCode ||
-                    "Waiting for the Formal Sign Writing sequence to be generated...."}
+                    "FSW parser is disabled. Rendering from Sign-MT pose API payload."}
                 </p>
               </div>
 
@@ -407,28 +460,23 @@ export default function SignLanguageUI() {
                   <div className="text-xs text-slate-300 space-y-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <div className="bg-slate-900 border border-slate-800 rounded px-2 py-1">
-                        Handshape:{" "}
+                        Source:{" "}
                         <span className="text-emerald-400 font-semibold">
-                          {ruleDebug.handshape}
+                          {ruleDebug.source ?? "sign-mt-cloud"}
                         </span>
                       </div>
                       <div className="bg-slate-900 border border-slate-800 rounded px-2 py-1">
-                        Pattern:{" "}
+                        Frame Count:{" "}
                         <span className="text-emerald-400 font-semibold">
-                          {ruleDebug.movement.pattern}
+                          {ruleDebug.frame_count ??
+                            poseBuffer?.frames.length ??
+                            0}
                         </span>
                       </div>
-                      <div className="bg-slate-900 border border-slate-800 rounded px-2 py-1">
-                        Direction 16:{" "}
+                      <div className="bg-slate-900 border border-slate-800 rounded px-2 py-1 md:col-span-2">
+                        Endpoint:{" "}
                         <span className="text-emerald-400 font-semibold">
-                          {ruleDebug.movement.direction.direction_16}
-                        </span>
-                      </div>
-                      <div className="bg-slate-900 border border-slate-800 rounded px-2 py-1">
-                        Direction 8:{" "}
-                        <span className="text-emerald-400 font-semibold">
-                          {ruleDebug.movement.direction.direction_8}{" "}
-                          {ruleDebug.movement.direction.arrow_8}
+                          {String(ruleDebug.endpoint ?? "N/A")}
                         </span>
                       </div>
                     </div>
