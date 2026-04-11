@@ -39,6 +39,12 @@ public class ApiResponseBodyAdvice implements ResponseBodyAdvice<Object> {
             return body;
         }
 
+        if (selectedContentType != null
+                && !MediaType.APPLICATION_JSON.isCompatibleWith(selectedContentType)
+                && !MediaType.APPLICATION_PROBLEM_JSON.isCompatibleWith(selectedContentType)) {
+            return body;
+        }
+
         int status = resolveStatus(response);
         if (status == HttpStatus.NO_CONTENT.value()) {
             return null;

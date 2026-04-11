@@ -1,73 +1,142 @@
-// package com.signlanguage.service;
+package com.signlanguage.service;
 
-// import java.io.IOException;
-// import java.nio.file.Files;
-// import java.nio.file.Path;
-// import java.nio.file.Paths;
-// import java.util.Optional;
-// import java.util.UUID;
+import com.signlanguage.entity.SignDictionary;
+import com.signlanguage.entity.TranslationHistory;
+import com.signlanguage.entity.UserSignLanguage;
+import com.signlanguage.repository.SignDictionaryRepository;
+import com.signlanguage.repository.TranslationHistoryRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-// import org.springframework.stereotype.Service;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-// import com.signlanguage.entity.SignDictionary;
-// import com.signlanguage.entity.TranslationHistory;
-// import com.signlanguage.repository.SignDictionaryRepository;
-// import com.signlanguage.repository.TranslationHistoryRepository;
+@Service
+@RequiredArgsConstructor
+public class TranslationHistoryService {
 
-// import lombok.*;
-// import lombok.experimental.FieldDefaults;
+	private final TranslationHistoryRepository historyRepository;
+	private final SignDictionaryRepository dictionaryRepository;
+	private final CurrentUserService currentUserService;
 
-// @Service
-// @RequiredArgsConstructor
-// @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-// public class TranslationHistoryService {
-//     SignDictionaryRepository signDictionaryRepository;
-//     TranslationHistoryRepository translationHistoryRepository;
+	@Transactional(readOnly = true)
+	public Page<Map<String, Object>> getMyHistories(Pageable pageable) {
+		UserSignLanguage user = currentUserService.requireCurrentUser();
+		return historyRepository.findByUserUserIdOrderByCreatedAtDesc(user.getUserId(), pageable)
+				.map(this::toResponse);
+	}
 
+	@Transactional(readOnly = true)
+	public Map<String, Object> getMyHistory(Long historyId) {
+		UserSignLanguage user = currentUserService.requireCurrentUser();
+		TranslationHistory history = historyRepository.findByHistoryIdAndUserUserId(historyId, user.getUserId())
+				.orElseThrow(() -> new RuntimeException("History not found"));
+		return toResponse(history);
+	}
 
-//     public String translateTextToPose(String englishText){
-//         long startTime = System.currentTimeMillis();
-        
-//         Optional<SignDictionary> cachedWord = signDictionaryRepository.findByEnglishTextIgnoreCase(englishText);
+	@Transactional
+	public Map<String, Object> createMyHistory(Long wordId, String inputText, String fswResult, String poseFilePath, Integer processingTimeMs) {
+		UserSignLanguage user = currentUserService.requireCurrentUser();
 
-//         if(cachedWord.isPresent()){
-//             return cachedWord.get().getPoseFilePath();
-//         }
+		TranslationHistory history = TranslationHistory.builder()
+				.user(user)
+				.word(resolveWord(wordId))
+				.inputText(inputText)
+				.fswResult(fswResult)
+				.poseFilePath(poseFilePath)
+				.processingTimeMs(processingTimeMs)
+				.build();
 
-//         byte[] poseData;
+		historyRepository.save(history);
+		return toResponse(history);
+	}
 
-//         String fileName = UUID.randomUUID().toString() + ".pose";
-//         String fileURL = saveFileToDisk(poseData, fileName);
+	@Transactional
+	public Map<String, Object> updateMyHistory(Long historyId, Long wordId, String inputText, String fswResult, String poseFilePath, Integer processingTimeMs) {
+		UserSignLanguage user = currentUserService.requireCurrentUser();
+		TranslationHistory history = historyRepository.findByHistoryIdAndUserUserId(historyId, user.getUserId())
+				.orElseThrow(() -> new RuntimeException("History not found"));
 
-//         saveHistory(englishText, null, fileURL, startTime);
+		if (wordId != null) {
+			history.setWord(resolveWord(wordId));
+		}
+		if (inputText != null) {
+			history.setInputText(inputText);
+		}
+		if (fswResult != null) {
+			history.setFswResult(fswResult);
+		}
+		if (poseFilePath != null) {
+			history.setPoseFilePath(poseFilePath);
+		}
+		if (processingTimeMs != null) {
+			history.setProcessingTimeMs(processingTimeMs);
+		}
 
-//         return fileURL;
-//     }
+		historyRepository.save(history);
+		return toResponse(history);
+	}
 
-//     private String saveFileToDisk(byte[] data, String fileName) {
-//         try {
-//             Path dirPath = Paths.get(poseUploadDir);
-//             if (!Files.exists(dirPath)) {
-//                 Files.createDirectories(dirPath); // Tạo thư mục nếu chưa có
-//             }
-//             Path filePath = dirPath.resolve(fileName);
-//             Files.write(filePath, data); // Ghi file
-            
-//             // Trả về URL để Frontend có thể tải (Ví dụ: /poses/uuid.pose)
-//             return "/poses/" + fileName; 
-//         } catch (IOException e) {
-//             throw new RuntimeException("Không thể lưu file Pose: " + e.getMessage());
-//         }
-//     }
+	@Transactional
+	public Map<String, Object> deleteMyHistory(Long historyId) {
+		UserSignLanguage user = currentUserService.requireCurrentUser();
+		long deleted = historyRepository.deleteByHistoryIdAndUserUserId(historyId, user.getUserId());
+		return Map.of("deleted", deleted > 0);
+	}
 
-//     private void saveHistory(String text, SignDictionary dict, String aiPosePath, long startTime) {
-//         TranslationHistory history = TranslationHistory.builder()
-//                 .inputText(text)
-//                 .word(dict)
-//                 .poseFilePath(dict != null ? dict.getPoseFilePath() : aiPosePath)
-//                 .processingTimeMs((int) (System.currentTimeMillis() - startTime))
-//                 // .user(...) // Thêm user đang đăng nhập vào đây nếu có JWT Security
-//                 .build();
-//         translationHistoryRepository.save(history);
-//     }
-// }
+	@Transactional
+	public Map<String, Object> deleteAllMyHistories() {
+		UserSignLanguage user = currentUserService.requireCurrentUser();
+		long deleted = historyRepository.deleteByUserUserId(user.getUserId());
+		return Map.of("deletedCount", deleted);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<Map<String, Object>> getAll(Pageable pageable) {
+		return historyRepository.findAll(pageable).map(this::toResponse);
+	}
+
+	@Transactional
+	public void saveFromGatewayIfAuthenticated(String inputText, String fswResult, String poseFilePath, Integer processingTimeMs) {
+		UserSignLanguage user;
+		try {
+			user = currentUserService.requireCurrentUser();
+		} catch (RuntimeException ex) {
+			return;
+		}
+
+		TranslationHistory history = TranslationHistory.builder()
+				.user(user)
+				.inputText(inputText)
+				.fswResult(fswResult)
+				.poseFilePath(poseFilePath)
+				.processingTimeMs(processingTimeMs)
+				.build();
+
+		historyRepository.save(history);
+	}
+
+	private SignDictionary resolveWord(Long wordId) {
+		if (wordId == null) {
+			return null;
+		}
+		return dictionaryRepository.findById(wordId)
+				.orElseThrow(() -> new RuntimeException("Dictionary word not found"));
+	}
+
+	private Map<String, Object> toResponse(TranslationHistory history) {
+		Map<String, Object> result = new LinkedHashMap<>();
+		result.put("historyId", history.getHistoryId());
+		result.put("userId", history.getUser() == null ? null : history.getUser().getUserId());
+		result.put("wordId", history.getWord() == null ? null : history.getWord().getWordId());
+		result.put("inputText", history.getInputText() == null ? "" : history.getInputText());
+		result.put("fswResult", history.getFswResult() == null ? "" : history.getFswResult());
+		result.put("poseFilePath", history.getPoseFilePath() == null ? "" : history.getPoseFilePath());
+		result.put("processingTimeMs", history.getProcessingTimeMs() == null ? 0 : history.getProcessingTimeMs());
+		result.put("createdAt", history.getCreatedAt());
+		return result;
+	}
+}

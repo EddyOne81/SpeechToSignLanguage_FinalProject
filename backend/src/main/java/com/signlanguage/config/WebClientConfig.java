@@ -17,7 +17,7 @@ public class WebClientConfig {
                 .baseUrl(aiServerUrl)
                 .codecs(configurer -> configurer
                         .defaultCodecs()
-                        .maxInMemorySize(2 * 1024 * 1024))
+                    .maxInMemorySize(20 * 1024 * 1024))
                 .build();
     }
 }

@@ -24,6 +24,35 @@ type RuleDebugPayload = {
   [key: string]: unknown;
 };
 
+const BACKEND_BASE_URL =
+  import.meta.env.VITE_BACKEND_URL ?? "http://127.0.0.1:8080";
+
+const extractPayloadFromApiResponse = (body: any) => {
+  if (body?.data?.recognized_text_en) {
+    return body.data;
+  }
+
+  if (body?.data?.data?.recognized_text_en) {
+    return body.data.data;
+  }
+
+  if (body?.recognized_text_en) {
+    return body;
+  }
+
+  return null;
+};
+
+const extractErrorMessage = (body: any) => {
+  if (!body) {
+    return "Server connection failed.";
+  }
+
+  return (
+    body.message || body.detail || body.error || "Server connection failed."
+  );
+};
+
 export default function SignLanguageUI() {
   // Quản lý trạng thái core
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -167,28 +196,30 @@ export default function SignLanguageUI() {
     setRuleDebug(null);
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/v1/translate/text",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            text,
-            spoken_lang: "en",
-            signed_lang: "ase",
-          }),
+      const response = await fetch(`${BACKEND_BASE_URL}/api/translate/text`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          text,
+          spoken_lang: "en",
+          signed_lang: "ase",
+        }),
+      });
 
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || "Server connection failed.");
+        const errData = await response.json().catch(() => null);
+        throw new Error(extractErrorMessage(errData));
       }
 
       const result = await response.json();
-      applyTranslationResult(result.data);
+      const payload = extractPayloadFromApiResponse(result);
+      if (!payload) {
+        throw new Error("Unexpected response payload from backend.");
+      }
+
+      applyTranslationResult(payload);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Đã xảy ra lỗi không xác định.");
@@ -215,7 +246,7 @@ export default function SignLanguageUI() {
       formData.append("file", audioFile);
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/v1/translate/audio",
+        `${BACKEND_BASE_URL}/api/translate/audio?spoken=en&signed=ase`,
         {
           method: "POST",
           body: formData,
@@ -223,12 +254,17 @@ export default function SignLanguageUI() {
       );
 
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || "Server connection failed.");
+        const errData = await response.json().catch(() => null);
+        throw new Error(extractErrorMessage(errData));
       }
 
       const result = await response.json();
-      applyTranslationResult(result.data);
+      const payload = extractPayloadFromApiResponse(result);
+      if (!payload) {
+        throw new Error("Unexpected response payload from backend.");
+      }
+
+      applyTranslationResult(payload);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Đã xảy ra lỗi không xác định.");
