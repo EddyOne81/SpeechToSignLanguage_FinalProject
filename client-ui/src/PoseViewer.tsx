@@ -55,9 +55,9 @@ const PoseViewer: React.FC<PoseViewerProps> = ({ buffer }) => {
   }, [buffer?.sourceUrl]);
 
   return (
-    <div className="w-full h-full relative flex items-center justify-center bg-gray-900 rounded-xl overflow-hidden">
+    <div className="relative flex h-full min-h-[320px] w-full items-center justify-center overflow-hidden rounded-xl bg-gray-900">
       {buffer?.sourceUrl ? (
-        <div className="w-full h-full flex items-center justify-center transform-gpu -translate-y-[14%] scale-[1.08]">
+        <div className="flex h-full w-full items-center justify-center px-2 py-4 sm:px-4 sm:py-6">
           {poseViewerNode}
         </div>
       ) : (

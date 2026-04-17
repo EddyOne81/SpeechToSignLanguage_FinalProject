@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  UploadCloud,
-  PlayCircle,
+  AlertCircle,
   FileText,
   Loader2,
-  AlertCircle,
   Mic,
+  PlayCircle,
   Square,
+  UploadCloud,
 } from "lucide-react";
 import PoseViewer from "./PoseViewer";
 
@@ -54,30 +54,27 @@ const extractErrorMessage = (body: any) => {
 };
 
 export default function SignLanguageUI() {
-  // Quản lý trạng thái core
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [inputText, setInputText] = useState<string>("Hello");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Quản lý trạng thái Ghi âm (Web Audio API)
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<number | null>(null);
 
-  // Quản lý trạng thái dữ liệu trả về
   const [transcript, setTranscript] = useState<string>("");
   const [fswCode, setFswCode] = useState<string>("");
   const [poseBuffer, setPoseBuffer] = useState<PoseBuffer | null>(null);
   const [ruleDebug, setRuleDebug] = useState<RuleDebugPayload | null>(null);
 
-  // Memory Leak Prevention
   useEffect(() => {
     return () => {
-      if (timerIntervalRef.current)
+      if (timerIntervalRef.current) {
         window.clearInterval(timerIntervalRef.current);
+      }
     };
   }, []);
 
@@ -85,15 +82,12 @@ export default function SignLanguageUI() {
     if (event.target.files && event.target.files.length > 0) {
       setAudioFile(event.target.files[0]);
       setErrorMsg(null);
-      // Nếu đang có file ghi âm cũ, ghi đè bằng file upload mới
     }
   };
 
-  // --- LOGIC GHI ÂM CHUẨN W3C ---
   const startRecording = async () => {
     try {
       setErrorMsg(null);
-      // Xin quyền truy cập Microphone
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       const mediaRecorder = new MediaRecorder(stream);
@@ -107,18 +101,15 @@ export default function SignLanguageUI() {
       };
 
       mediaRecorder.onstop = () => {
-        // Đóng gói luồng âm thanh thành Blob định dạng WebM
         const audioBlob = new Blob(audioChunksRef.current, {
           type: "audio/webm",
         });
 
-        // Chuyển đổi Blob thành đối tượng File để tương thích với luồng API hiện tại
         const file = new File([audioBlob], "recorded_audio.webm", {
           type: "audio/webm",
         });
         setAudioFile(file);
 
-        // Giải phóng tài nguyên phần cứng (Microphone)
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -130,9 +121,9 @@ export default function SignLanguageUI() {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
     } catch (err: any) {
-      console.error("[System] Lỗi truy cập Microphone:", err);
+      console.error("[System] Microphone access error:", err);
       setErrorMsg(
-        "Không thể truy cập Microphone. Vui lòng cấp quyền trong cài đặt trình duyệt.",
+        "Khong the truy cap microphone. Vui long cap quyen trong cai dat trinh duyet.",
       );
     }
   };
@@ -147,7 +138,6 @@ export default function SignLanguageUI() {
     }
   };
 
-  // Định dạng thời gian hiển thị (MM:SS)
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
       .toString()
@@ -156,7 +146,6 @@ export default function SignLanguageUI() {
     return `${m}:${s}`;
   };
 
-  // --- LOGIC GỌI API GATEWAY ---
   const applyTranslationResult = (data: any) => {
     const {
       recognized_text_en,
@@ -171,20 +160,20 @@ export default function SignLanguageUI() {
     setFswCode(fsw_code ?? "");
     setPoseBuffer({
       frames: pose_coordinates,
-      fps: fps,
+      fps,
       sourceUrl: pose_source_url,
     });
     setRuleDebug(rule_debug ?? null);
 
     console.log(
-      `[System] Đã nhận thành công ${pose_coordinates.length} khung hình JSON.`,
+      `[System] Received ${pose_coordinates.length} JSON animation frames.`,
     );
   };
 
   const startTextTranslation = async () => {
     const text = inputText.trim();
     if (!text) {
-      setErrorMsg("Vui lòng nhập text trước khi dịch.");
+      setErrorMsg("Vui long nhap text truoc khi dich.");
       return;
     }
 
@@ -222,7 +211,7 @@ export default function SignLanguageUI() {
       applyTranslationResult(payload);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || "Đã xảy ra lỗi không xác định.");
+      setErrorMsg(err.message || "Da xay ra loi khong xac dinh.");
     } finally {
       setIsProcessing(false);
     }
@@ -230,7 +219,7 @@ export default function SignLanguageUI() {
 
   const startTranslation = async () => {
     if (!audioFile) {
-      setErrorMsg("Vui lòng tải lên tệp âm thanh hoặc ghi âm trực tiếp.");
+      setErrorMsg("Vui long tai len tep am thanh hoac ghi am truc tiep.");
       return;
     }
 
@@ -267,275 +256,278 @@ export default function SignLanguageUI() {
       applyTranslationResult(payload);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || "Đã xảy ra lỗi không xác định.");
+      setErrorMsg(err.message || "Da xay ra loi khong xac dinh.");
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-6 font-sans">
-      <header className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            S2S - Speech 2 Sign
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Speech-to-Sign Language Conversion System
-          </p>
-        </div>
-        <div className="flex items-center space-x-2 text-sm bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-500/20">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span>API Gateway: Online</span>
-        </div>
-      </header>
+    <div className="min-h-screen w-full text-slate-200">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+        <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-800/80 bg-slate-950/70 px-5 py-4 shadow-xl shadow-slate-950/30 backdrop-blur sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              S2S - Speech 2 Sign
+            </h1>
+            <p className="mt-1 text-sm text-slate-400">
+              Speech-to-Sign Language Conversion System
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-400">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            </span>
+            <span>API Gateway: Online</span>
+          </div>
+        </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column */}
-        <div className="lg:col-span-5 flex flex-col gap-6 h-[75vh]">
-          {/* Audio Input Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col">
-            <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center">
-              <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-xs mr-2">
-                Step 1
-              </span>
-              Input Source
-            </h3>
+        <div className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-12">
+          <div className="flex min-h-0 flex-col gap-6 xl:col-span-5">
+            <div className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg">
+              <h3 className="mb-4 flex items-center text-sm font-semibold text-slate-300">
+                <span className="mr-2 rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
+                  Step 1
+                </span>
+                Input Source
+              </h3>
 
-            {/* Vùng tải tệp và ghi âm */}
-            <div className="flex flex-col gap-4">
-              <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-3">
-                <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
-                  Quick Text Input
-                </p>
-                <textarea
-                  value={inputText}
-                  onChange={(event) => setInputText(event.target.value)}
-                  placeholder="Type English text. Example: Hello"
-                  className="w-full h-20 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
+              <div className="flex flex-col gap-4">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                  <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+                    Quick Text Input
+                  </p>
+                  <textarea
+                    value={inputText}
+                    onChange={(event) => setInputText(event.target.value)}
+                    placeholder="Type English text. Example: Hello"
+                    className="h-20 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <button
+                    onClick={startTextTranslation}
+                    disabled={isProcessing || !inputText.trim()}
+                    className={`mt-3 flex w-full items-center justify-center rounded-lg py-2.5 font-medium text-white transition-all ${isProcessing || !inputText.trim() ? "cursor-not-allowed bg-slate-800 text-slate-500" : "bg-emerald-600 hover:bg-emerald-500"}`}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Translating Text...
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Translate From Text
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <label
+                  className={`flex h-28 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 transition-all ${audioFile && !audioFile.name.includes("recorded_audio") ? "border-emerald-500 bg-emerald-500/5" : "border-dashed border-slate-700 hover:border-emerald-500/50 hover:bg-slate-800/50"}`}
+                >
+                  <div className="flex flex-col items-center justify-center px-4 pt-5 pb-6 text-center">
+                    <UploadCloud
+                      className={`mb-2 h-7 w-7 ${audioFile && !audioFile.name.includes("recorded_audio") ? "text-emerald-400" : "text-slate-400"}`}
+                    />
+                    {audioFile && !audioFile.name.includes("recorded_audio") ? (
+                      <p className="max-w-full break-all text-sm font-medium text-emerald-400">
+                        {audioFile.name}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-slate-400">
+                          <span className="font-semibold text-emerald-400">
+                            Click to upload
+                          </span>{" "}
+                          or drag and drop
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          .wav, .mp3, .m4a, .webm
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="audio/*"
+                    onChange={handleFileChange}
+                  />
+                </label>
+
+                <div className="flex items-center text-xs font-semibold uppercase text-slate-500">
+                  <div className="flex-1 border-b border-slate-800"></div>
+                  <span className="mx-4">AUDIO</span>
+                  <div className="flex-1 border-b border-slate-800"></div>
+                </div>
+
+                <div
+                  className={`flex flex-col gap-4 rounded-xl border p-4 transition-all sm:flex-row sm:items-center sm:justify-between ${isRecording ? "border-rose-500/50 bg-rose-500/5" : audioFile && audioFile.name.includes("recorded_audio") ? "border-emerald-500 bg-emerald-500/5" : "border-slate-800 bg-slate-950/50"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`rounded-full p-2 ${isRecording ? "animate-pulse bg-rose-500/20 text-rose-500" : "bg-slate-800 text-slate-400"}`}
+                    >
+                      <Mic className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-slate-200">
+                        {isRecording
+                          ? "Dang ghi am..."
+                          : audioFile && audioFile.name.includes("recorded_audio")
+                            ? "Da ghi am xong"
+                            : "Ghi am truc tiep"}
+                      </span>
+                      <span
+                        className={`font-mono text-xs ${isRecording ? "text-rose-400" : "text-slate-500"}`}
+                      >
+                        {formatTime(recordingTime)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isRecording ? (
+                    <button
+                      onClick={stopRecording}
+                      className="flex items-center justify-center rounded-lg bg-rose-500 p-2 text-white transition-colors hover:bg-rose-600"
+                    >
+                      <Square className="mr-1.5 h-4 w-4 fill-current" />
+                      Stop
+                    </button>
+                  ) : (
+                    <button
+                      onClick={startRecording}
+                      className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
+                    >
+                      Start
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {errorMsg && (
+                <div className="mt-4 flex items-center rounded-lg border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs text-rose-400">
+                  <AlertCircle className="mr-2 h-4 w-4 shrink-0" />
+                  {errorMsg}
+                </div>
+              )}
+
+              <div className="mt-auto pt-4">
                 <button
-                  onClick={startTextTranslation}
-                  disabled={isProcessing || !inputText.trim()}
-                  className={`mt-3 w-full text-white font-medium py-2.5 rounded-lg flex items-center justify-center transition-all ${isProcessing || !inputText.trim() ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-500"}`}>
+                  onClick={startTranslation}
+                  disabled={isProcessing || !audioFile || isRecording}
+                  className={`flex w-full items-center justify-center rounded-xl py-3 font-medium text-white shadow-lg transition-all ${isProcessing || !audioFile || isRecording ? "cursor-not-allowed bg-slate-800 text-slate-500" : "bg-emerald-600 shadow-emerald-900/20 hover:bg-emerald-500"}`}
+                >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Translating Text...
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      In progress: AI translation...
                     </>
                   ) : (
                     <>
-                      <PlayCircle className="w-4 h-4 mr-2" />
-                      Translate From Text
+                      <PlayCircle className="mr-2 h-5 w-5" />
+                      Start the transformation
                     </>
                   )}
                 </button>
               </div>
+            </div>
 
-              {/* Vùng Dropzone Upload */}
-              <label
-                className={`flex flex-col items-center justify-center w-full h-28 border-2 ${audioFile && !audioFile.name.includes("recorded_audio") ? "border-emerald-500 bg-emerald-500/5" : "border-slate-700 border-dashed hover:bg-slate-800/50 hover:border-emerald-500/50"} rounded-xl cursor-pointer transition-all`}>
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <UploadCloud
-                    className={`w-7 h-7 mb-2 ${audioFile && !audioFile.name.includes("recorded_audio") ? "text-emerald-400" : "text-slate-400"}`}
-                  />
-                  {audioFile && !audioFile.name.includes("recorded_audio") ? (
-                    <p className="text-sm text-emerald-400 font-medium">
-                      {audioFile.name}
-                    </p>
+            <div className="flex min-h-[220px] flex-1 flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg">
+              <h3 className="mb-3 flex items-center justify-between text-sm font-semibold text-slate-300">
+                <div className="flex items-center">
+                  <span className="mr-2 rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
+                    Step 2
+                  </span>
+                  English text
+                </div>
+              </h3>
+              <div className="flex-1 overflow-y-auto rounded-xl border border-slate-800/50 bg-slate-950 p-4 font-medium leading-relaxed text-slate-300">
+                {transcript ? (
+                  <div className="mb-2 flex items-start">
+                    <FileText className="mt-1 mr-2 h-4 w-4 shrink-0 text-emerald-500" />
+                    <p>{transcript}</p>
+                  </div>
+                ) : (
+                  <p className="flex h-full items-center justify-center text-sm italic text-slate-600">
+                    Wait for a response from the server...
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-col xl:col-span-7">
+            <div className="relative flex min-h-[640px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg">
+              <div className="z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/50 p-4">
+                <h2 className="flex items-center text-sm font-semibold text-emerald-400">
+                  <span className="mr-2 rounded border border-emerald-500/20 bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400">
+                    Step 3
+                  </span>
+                  Graphics Rendering (Skeletal Animation)
+                </h2>
+              </div>
+
+              <div className="flex flex-1 flex-col bg-gradient-to-b from-slate-900 to-slate-950 p-4 sm:p-6">
+                <div className="group relative mb-4 min-h-[120px] overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-4">
+                  <div className="absolute top-2 right-2 rounded bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400">
+                    Pose Source
+                  </div>
+                  <p className="break-all font-mono text-xs leading-relaxed text-emerald-500/80">
+                    {fswCode ||
+                      "FSW parser is disabled. Rendering from Sign-MT pose API payload."}
+                  </p>
+                </div>
+
+                <div className="group relative mb-4 min-h-[180px] overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-4">
+                  <div className="absolute top-2 right-2 rounded bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400">
+                    Rule Debug
+                  </div>
+                  {ruleDebug ? (
+                    <div className="space-y-2 text-xs text-slate-300">
+                      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        <div className="rounded border border-slate-800 bg-slate-900 px-2 py-1">
+                          Source:{" "}
+                          <span className="font-semibold text-emerald-400">
+                            {ruleDebug.source ?? "sign-mt-cloud"}
+                          </span>
+                        </div>
+                        <div className="rounded border border-slate-800 bg-slate-900 px-2 py-1">
+                          Frame Count:{" "}
+                          <span className="font-semibold text-emerald-400">
+                            {ruleDebug.frame_count ??
+                              poseBuffer?.frames.length ??
+                              0}
+                          </span>
+                        </div>
+                        <div className="rounded border border-slate-800 bg-slate-900 px-2 py-1 md:col-span-2">
+                          Endpoint:{" "}
+                          <span className="font-semibold text-emerald-400">
+                            {String(ruleDebug.endpoint ?? "N/A")}
+                          </span>
+                        </div>
+                      </div>
+                      <pre className="whitespace-pre-wrap break-all rounded border border-slate-800 bg-slate-900 p-2 text-[11px] leading-relaxed text-cyan-300/90">
+                        {JSON.stringify(ruleDebug, null, 2)}
+                      </pre>
+                    </div>
                   ) : (
-                    <>
-                      <p className="text-sm text-slate-400">
-                        <span className="font-semibold text-emerald-400">
-                          Click to upload
-                        </span>{" "}
-                        or drag and drop
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        .wav, .mp3, .m4a, .webm
-                      </p>
-                    </>
+                    <p className="text-sm text-slate-600">
+                      Waiting for rule-debug JSON payload from server...
+                    </p>
                   )}
                 </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="audio/*"
-                  onChange={handleFileChange}
-                />
-              </label>
 
-              <div className="flex items-center text-xs text-slate-500 uppercase font-semibold">
-                <div className="flex-1 border-b border-slate-800"></div>
-                <span className="mx-4">AUDIO</span>
-                <div className="flex-1 border-b border-slate-800"></div>
-              </div>
-
-              {/* Vùng Ghi âm trực tiếp */}
-              <div
-                className={`flex items-center justify-between p-4 border rounded-xl transition-all ${isRecording ? "border-rose-500/50 bg-rose-500/5" : audioFile && audioFile.name.includes("recorded_audio") ? "border-emerald-500 bg-emerald-500/5" : "border-slate-800 bg-slate-950/50"}`}>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`p-2 rounded-full ${isRecording ? "bg-rose-500/20 text-rose-500 animate-pulse" : "bg-slate-800 text-slate-400"}`}>
-                    <Mic className="w-5 h-5" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-slate-200">
-                      {isRecording
-                        ? "Đang ghi âm..."
-                        : audioFile && audioFile.name.includes("recorded_audio")
-                          ? "Đã ghi âm xong"
-                          : "Ghi âm trực tiếp"}
-                    </span>
-                    <span
-                      className={`text-xs font-mono ${isRecording ? "text-rose-400" : "text-slate-500"}`}>
-                      {formatTime(recordingTime)}
-                    </span>
-                  </div>
+                <div className="relative flex min-h-[360px] flex-1 items-center justify-center overflow-hidden rounded-xl border border-slate-800 bg-black p-2">
+                  {poseBuffer ? (
+                    <PoseViewer buffer={poseBuffer} />
+                  ) : (
+                    <p className="text-sm text-slate-600">
+                      2D/3D Canvas Display Space
+                    </p>
+                  )}
                 </div>
-
-                {isRecording ? (
-                  <button
-                    onClick={stopRecording}
-                    className="bg-rose-500 hover:bg-rose-600 text-white p-2 rounded-lg transition-colors flex items-center">
-                    <Square className="w-4 h-4 fill-current mr-1.5" /> Stop
-                  </button>
-                ) : (
-                  <button
-                    onClick={startRecording}
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg transition-colors text-sm font-medium">
-                    Start
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {errorMsg && (
-              <div className="mt-4 text-xs text-rose-400 flex items-center bg-rose-500/10 p-2.5 rounded-lg border border-rose-500/20">
-                <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
-                {errorMsg}
-              </div>
-            )}
-
-            <div className="mt-auto pt-4">
-              <button
-                onClick={startTranslation}
-                disabled={isProcessing || !audioFile || isRecording}
-                className={`w-full text-white font-medium py-3 rounded-xl flex items-center justify-center transition-all shadow-lg ${isProcessing || !audioFile || isRecording ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20"}`}>
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" /> In
-                    progress: AI translation...
-                  </>
-                ) : (
-                  <>
-                    <PlayCircle className="w-5 h-5 mr-2" /> Start the
-                    transformation
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Transcript Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex-1 flex flex-col shadow-lg">
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-xs mr-2">
-                  Step 2
-                </span>
-                English text
-              </div>
-            </h3>
-            <div className="bg-slate-950 rounded-xl p-4 flex-1 border border-slate-800/50 font-medium text-slate-300 leading-relaxed overflow-y-auto">
-              {transcript ? (
-                <div className="flex items-start mb-2">
-                  <FileText className="w-4 h-4 text-emerald-500 mr-2 mt-1 shrink-0" />
-                  <p>{transcript}</p>
-                </div>
-              ) : (
-                <p className="text-slate-600 text-sm italic flex items-center h-full justify-center">
-                  Wait for a response from the server...
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Output / Animation Canvas */}
-        <div className="lg:col-span-7 flex flex-col h-[75vh]">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl flex-1 relative overflow-hidden flex flex-col shadow-lg">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 z-10">
-              <h2 className="text-sm font-semibold flex items-center text-emerald-400">
-                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs mr-2 border border-emerald-500/20">
-                  Step 3
-                </span>
-                Graphics Rendering (Skeletal Animation)
-              </h2>
-            </div>
-
-            <div className="flex-1 flex flex-col bg-gradient-to-b from-slate-900 to-slate-950 p-6">
-              <div className="h-28 bg-slate-950 rounded-xl border border-slate-800 p-4 overflow-y-auto relative group mb-4">
-                <div className="absolute top-2 right-2 bg-slate-800 text-slate-400 text-[10px] uppercase tracking-wider px-2 py-1 rounded">
-                  Pose Source
-                </div>
-                <p className="font-mono text-xs text-emerald-500/80 break-all leading-relaxed">
-                  {fswCode ||
-                    "FSW parser is disabled. Rendering from Sign-MT pose API payload."}
-                </p>
-              </div>
-
-              <div className="h-40 bg-slate-950 rounded-xl border border-slate-800 p-4 overflow-y-auto relative group mb-4">
-                <div className="absolute top-2 right-2 bg-slate-800 text-slate-400 text-[10px] uppercase tracking-wider px-2 py-1 rounded">
-                  Rule Debug
-                </div>
-                {ruleDebug ? (
-                  <div className="text-xs text-slate-300 space-y-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <div className="bg-slate-900 border border-slate-800 rounded px-2 py-1">
-                        Source:{" "}
-                        <span className="text-emerald-400 font-semibold">
-                          {ruleDebug.source ?? "sign-mt-cloud"}
-                        </span>
-                      </div>
-                      <div className="bg-slate-900 border border-slate-800 rounded px-2 py-1">
-                        Frame Count:{" "}
-                        <span className="text-emerald-400 font-semibold">
-                          {ruleDebug.frame_count ??
-                            poseBuffer?.frames.length ??
-                            0}
-                        </span>
-                      </div>
-                      <div className="bg-slate-900 border border-slate-800 rounded px-2 py-1 md:col-span-2">
-                        Endpoint:{" "}
-                        <span className="text-emerald-400 font-semibold">
-                          {String(ruleDebug.endpoint ?? "N/A")}
-                        </span>
-                      </div>
-                    </div>
-                    <pre className="text-[11px] leading-relaxed text-cyan-300/90 whitespace-pre-wrap break-all bg-slate-900 border border-slate-800 rounded p-2">
-                      {JSON.stringify(ruleDebug, null, 2)}
-                    </pre>
-                  </div>
-                ) : (
-                  <p className="text-slate-600 text-sm">
-                    Waiting for rule-debug JSON payload from server...
-                  </p>
-                )}
-              </div>
-
-              {/* Khu vực chứa Canvas Hoạt ảnh */}
-              <div className="flex-1 bg-black rounded-xl border border-slate-800 flex items-center justify-center relative overflow-hidden p-2">
-                {poseBuffer ? (
-                  <PoseViewer buffer={poseBuffer} />
-                ) : (
-                  <p className="text-slate-600 text-sm">
-                    2D/3D Canvas Display Space
-                  </p>
-                )}
               </div>
             </div>
           </div>
