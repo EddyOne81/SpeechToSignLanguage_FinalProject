@@ -14,6 +14,23 @@ public class SignDictionary {
     @Column(unique = true, nullable = false)
     private String englishText;
 
+    @Column(length = 512)
+    private String normalizedText;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private DictionaryEntryType entryType;
+
+    @Column(length = 16)
+    private String spokenLang;
+
+    @Column(length = 16)
+    private String signedLang;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 24)
+    private DictionaryCacheSource cacheSource;
+
     @Column(columnDefinition = "TEXT")
     private String fswCode;
 
