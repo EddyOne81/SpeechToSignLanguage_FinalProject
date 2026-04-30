@@ -44,6 +44,12 @@ public class TranslationGatewayService {
     @Value("${app.pose-cache-dir:data/pose_cache}")
     private String poseCacheDir;
 
+    @Value("${app.auto-cache.phrase-enabled:false}")
+    private boolean autoCachePhraseEnabled;
+
+    @Value("${app.auto-cache.max-phrase-words:2}")
+    private int autoCacheMaxPhraseWords;
+
         private static final ParameterizedTypeReference<Map<String, Object>> MAP_TYPE =
             new ParameterizedTypeReference<>() {};
     private static final int DEFAULT_CACHE_FPS = 25;
@@ -298,6 +304,9 @@ public class TranslationGatewayService {
         }
 
         DictionaryEntryType entryType = guessEntryType(normalizedText);
+        if (!shouldAutoCache(normalizedText, entryType)) {
+            return;
+        }
         Optional<SignDictionary> existing = dictionaryRepository
                 .findFirstByNormalizedTextAndEntryTypeAndSpokenLangAndSignedLang(
                         normalizedText,
@@ -454,6 +463,24 @@ public class TranslationGatewayService {
             return DictionaryEntryType.GLOSS;
         }
         return normalizedText.contains(" ") ? DictionaryEntryType.PHRASE : DictionaryEntryType.GLOSS;
+    }
+
+    private boolean shouldAutoCache(String normalizedText, DictionaryEntryType entryType) {
+        if (entryType != DictionaryEntryType.PHRASE) {
+            return true;
+        }
+        if (!autoCachePhraseEnabled) {
+            return false;
+        }
+        int maxWords = autoCacheMaxPhraseWords <= 0 ? 0 : autoCacheMaxPhraseWords;
+        return countWords(normalizedText) <= maxWords;
+    }
+
+    private int countWords(String normalizedText) {
+        if (normalizedText == null || normalizedText.isBlank()) {
+            return 0;
+        }
+        return normalizedText.trim().split("\\s+").length;
     }
 
     private String normalizeText(String text) {
