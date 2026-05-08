@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   BookOpen,
-  FileText,
   History,
   KeyRound,
   Loader2,
@@ -10,10 +9,12 @@ import {
   LogOut,
   MessageSquare,
   Mic,
+  Moon,
   PlayCircle,
   RefreshCw,
   Search,
   Square,
+  Sun,
   UploadCloud,
   UserCircle,
 } from "lucide-react";
@@ -23,14 +24,6 @@ type PoseBuffer = {
   frames: number[][][];
   fps: number;
   sourceUrl?: string;
-};
-
-type RuleDebugPayload = {
-  source?: string;
-  endpoint?: string;
-  frame_count?: number;
-  point_count?: number;
-  [key: string]: unknown;
 };
 
 type DictionaryItem = {
@@ -116,6 +109,11 @@ const extractErrorMessage = (body: any) => {
 };
 
 export default function SignLanguageUI() {
+  const [isHeaderCompact, setIsHeaderCompact] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    const stored = localStorage.getItem("s2s_theme");
+    return stored === "light" ? "light" : "dark";
+  });
   const [activeTab, setActiveTab] = useState<
     "translate" | "dictionary" | "history" | "feedback" | "account"
   >("translate");
@@ -140,6 +138,9 @@ export default function SignLanguageUI() {
   const [authMessage, setAuthMessage] = useState<string | null>(null);
 
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"text" | "upload" | "record">(
+    "text",
+  );
   const [inputText, setInputText] = useState<string>("Hello");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -151,9 +152,7 @@ export default function SignLanguageUI() {
   const timerIntervalRef = useRef<number | null>(null);
 
   const [transcript, setTranscript] = useState<string>("");
-  const [fswCode, setFswCode] = useState<string>("");
   const [poseBuffer, setPoseBuffer] = useState<PoseBuffer | null>(null);
-  const [ruleDebug, setRuleDebug] = useState<RuleDebugPayload | null>(null);
 
   const [dictQuery, setDictQuery] = useState("");
   const [dictItems, setDictItems] = useState<DictionaryItem[]>([]);
@@ -181,6 +180,19 @@ export default function SignLanguageUI() {
     oldPassword: "",
     newPassword: "",
   });
+
+  useEffect(() => {
+    localStorage.setItem("s2s_theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setIsHeaderCompact(window.scrollY > 18);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -281,21 +293,17 @@ export default function SignLanguageUI() {
   const applyTranslationResult = (data: any) => {
     const {
       recognized_text_en,
-      fsw_code,
       pose_coordinates,
       pose_source_url,
       fps,
-      rule_debug,
     } = data;
 
     setTranscript(recognized_text_en);
-    setFswCode(fsw_code ?? "");
     setPoseBuffer({
       frames: pose_coordinates,
       fps,
       sourceUrl: pose_source_url,
     });
-    setRuleDebug(rule_debug ?? null);
 
     console.log(
       `[System] Received ${pose_coordinates.length} JSON animation frames.`,
@@ -529,10 +537,10 @@ export default function SignLanguageUI() {
     tab: "translate" | "dictionary" | "history" | "feedback" | "account",
   ) => {
     const isActive = activeTab === tab;
-    return `flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all ${
+    return `flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.04em] transition-all ${
       isActive
-        ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-200"
-        : "border-slate-800 bg-slate-900 text-slate-400 hover:border-emerald-500/40 hover:text-emerald-300"
+        ? "ui-tab-active"
+        : "ui-tab-idle"
     }`;
   };
 
@@ -546,9 +554,7 @@ export default function SignLanguageUI() {
     setIsProcessing(true);
     setErrorMsg(null);
     setTranscript("");
-    setFswCode("");
     setPoseBuffer(null);
-    setRuleDebug(null);
 
     try {
       const result = await apiRequest("/api/translate/text", {
@@ -592,9 +598,7 @@ export default function SignLanguageUI() {
     setIsProcessing(true);
     setErrorMsg(null);
     setTranscript("");
-    setFswCode("");
     setPoseBuffer(null);
-    setRuleDebug(null);
 
     try {
       const formData = new FormData();
@@ -623,324 +627,289 @@ export default function SignLanguageUI() {
   };
 
   return (
-    <div className="min-h-screen w-full text-slate-200">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-        <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-800/80 bg-slate-950/70 px-5 py-4 shadow-xl shadow-slate-950/30 backdrop-blur sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              S2S - Speech 2 Sign
-            </h1>
-            <p className="mt-1 text-sm text-slate-400">
-              Speech-to-Sign Language Conversion System
-            </p>
-          </div>
-          <div className="flex items-center space-x-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-400">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-            </span>
-            <span>API Gateway: Online</span>
-          </div>
-        </header>
-
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 shadow-lg">
-          <div className="flex flex-wrap gap-2">
-            <button
-              className={tabButtonClass("translate")}
-              onClick={() => setActiveTab("translate")}>
-              <PlayCircle className="h-4 w-4" />
-              Translate
-            </button>
-            <button
-              className={tabButtonClass("dictionary")}
-              onClick={() => setActiveTab("dictionary")}>
-              <BookOpen className="h-4 w-4" />
-              Dictionary
-            </button>
-            <button
-              className={tabButtonClass("history")}
-              onClick={() => setActiveTab("history")}>
-              <History className="h-4 w-4" />
-              History
-            </button>
-            <button
-              className={tabButtonClass("feedback")}
-              onClick={() => setActiveTab("feedback")}>
-              <MessageSquare className="h-4 w-4" />
-              Feedback
-            </button>
-            <button
-              className={tabButtonClass("account")}
-              onClick={() => setActiveTab("account")}>
-              <UserCircle className="h-4 w-4" />
-              Account
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-            {authUser ? (
-              <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-3 py-2">
-                <UserCircle className="h-4 w-4 text-emerald-400" />
-                <span className="text-slate-200">{authUser.username}</span>
-                {authUser.role && (
-                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase text-emerald-300">
-                    {authUser.role}
-                  </span>
+    <div
+      className={`app-shell ${theme === "dark" ? "theme-dark" : "theme-light"} relative min-h-screen w-full overflow-x-hidden`}>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-28 left-[8%] h-80 w-80 rounded-full bg-pink-400/8 blur-3xl" />
+        <div className="absolute top-[18%] -right-28 h-96 w-96 rounded-full bg-rose-400/8 blur-3xl" />
+      </div>
+      <header className={`app-header-shell ${isHeaderCompact ? "compact" : ""}`}>
+        <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8">
+          <div
+            className={`transition-all duration-300 ${isHeaderCompact ? "py-2" : "py-2.5 sm:py-3"}`}>
+          <div className="flex flex-nowrap items-center justify-between gap-2">
+            <div className="min-w-0 shrink-0">
+              <h1
+                className={`truncate font-bold tracking-tight transition-all duration-300 ${isHeaderCompact ? "text-base" : "text-lg"}`}>
+                S2S - Speech 2 Sign
+              </h1>
+            </div>
+            <div className="mx-2 flex min-w-0 flex-1 flex-nowrap justify-center gap-2 overflow-x-auto">
+              <button
+                className={tabButtonClass("translate")}
+                onClick={() => setActiveTab("translate")}>
+                <PlayCircle className="h-4 w-4" />
+                Translate
+              </button>
+              <button
+                className={tabButtonClass("dictionary")}
+                onClick={() => setActiveTab("dictionary")}>
+                <BookOpen className="h-4 w-4" />
+                Dictionary
+              </button>
+              <button
+                className={tabButtonClass("history")}
+                onClick={() => setActiveTab("history")}>
+                <History className="h-4 w-4" />
+                History
+              </button>
+              <button
+                className={tabButtonClass("feedback")}
+                onClick={() => setActiveTab("feedback")}>
+                <MessageSquare className="h-4 w-4" />
+                Feedback
+              </button>
+              <button
+                className={tabButtonClass("account")}
+                onClick={() => setActiveTab("account")}>
+                <UserCircle className="h-4 w-4" />
+                Account
+              </button>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                onClick={() =>
+                  setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+                }
+                className="ui-btn-secondary flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm">
+                {theme === "dark" ? (
+                  <>
+                    <Sun className="h-4 w-4" />
+                  </>
+                ) : (
+                  <>
+                    <Moon className="h-4 w-4" />
+                  </>
                 )}
-                <button
-                  onClick={handleLogout}
-                  className="ml-2 flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[10px] uppercase text-rose-200 transition hover:border-rose-500/60">
-                  <LogOut className="h-3.5 w-3.5" />
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-3 py-2">
-                <UserCircle className="h-4 w-4 text-slate-500" />
-                <span>Not logged in</span>
-              </div>
-            )}
+              </button>
+              {authUser ? (
+                <div className="glass-inset flex items-center gap-2 rounded-full px-2 py-1 text-xs">
+                  <UserCircle className="h-4 w-4 text-violet-200" />
+                  <span>{authUser.username}</span>
+                  <button
+                    onClick={handleLogout}
+                    className="ml-2 flex items-center gap-1 rounded-full border border-rose-400/35 bg-rose-400/15 px-2 py-1 text-[10px] uppercase text-rose-100 transition hover:border-rose-300/75">
+                    <LogOut className="h-3.5 w-3.5" />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="glass-inset flex items-center gap-2 rounded-full px-2 py-1 text-xs">
+                  <UserCircle className="h-4 w-4 text-slate-500" />
+                  <span>Not logged in</span>
+                </div>
+              )}
+            </div>
+          </div>
           </div>
         </div>
+      </header>
+
+      <main className={`app-main-offset ${isHeaderCompact ? "compact" : ""} relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 sm:px-6 sm:pb-6 lg:px-8`}>
 
         {activeTab === "translate" && (
-          <div className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-12">
-            <div className="flex min-h-0 flex-col gap-6 xl:col-span-5">
-              <div className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg">
-                <h3 className="mb-4 flex items-center text-sm font-semibold text-slate-300">
-                  <span className="mr-2 rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
-                    Step 1
-                  </span>
-                  Input Source
-                </h3>
+          <div className="grid flex-1 grid-cols-1 gap-4 xl:grid-cols-12">
+            <div className="flex min-h-0 min-w-0 flex-col gap-4 xl:col-span-4">
+              <div className="glass-panel flex flex-col rounded-3xl p-5">
+                <h3 className="mb-4 text-sm font-semibold ">Input Source</h3>
+
+                <div className="mb-4 flex gap-2 rounded-full bg-slate-900/50 p-1 shadow-inner shadow-slate-950/30">
+                  <button
+                    onClick={() => setInputMode("text")}
+                    className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${inputMode === "text" ? "bg-violet-500/25 text-violet-100 shadow" : "text-slate-300 hover:text-slate-100"}`}>
+                    Text
+                  </button>
+                  <button
+                    onClick={() => setInputMode("upload")}
+                    className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${inputMode === "upload" ? "bg-violet-500/25 text-violet-100 shadow" : "text-slate-300 hover:text-slate-100"}`}>
+                    Upload
+                  </button>
+                  <button
+                    onClick={() => setInputMode("record")}
+                    className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${inputMode === "record" ? "bg-violet-500/25 text-violet-100 shadow" : "text-slate-300 hover:text-slate-100"}`}>
+                    Record
+                  </button>
+                </div>
 
                 <div className="flex flex-col gap-4">
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-                    <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
-                      Quick Text Input
-                    </p>
-                    <textarea
-                      value={inputText}
-                      onChange={(event) => setInputText(event.target.value)}
-                      placeholder="Type English text. Example: Hello"
-                      className="h-20 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
-                    <button
-                      onClick={() => startTextTranslation()}
-                      disabled={isProcessing || !inputText.trim()}
-                      className={`mt-3 flex w-full items-center justify-center rounded-lg py-2.5 font-medium text-white transition-all ${isProcessing || !inputText.trim() ? "cursor-not-allowed bg-slate-800 text-slate-500" : "bg-emerald-600 hover:bg-emerald-500"}`}>
-                      {isProcessing ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Translating Text...
-                        </>
-                      ) : (
-                        <>
-                          <PlayCircle className="mr-2 h-4 w-4" />
-                          Translate From Text
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  <label
-                    className={`flex h-28 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 transition-all ${audioFile && !audioFile.name.includes("recorded_audio") ? "border-emerald-500 bg-emerald-500/5" : "border-dashed border-slate-700 hover:border-emerald-500/50 hover:bg-slate-800/50"}`}>
-                    <div className="flex flex-col items-center justify-center px-4 pt-5 pb-6 text-center">
-                      <UploadCloud
-                        className={`mb-2 h-7 w-7 ${audioFile && !audioFile.name.includes("recorded_audio") ? "text-emerald-400" : "text-slate-400"}`}
+                  {inputMode === "text" && (
+                    <div className="glass-inset rounded-xl p-3 shadow-sm">
+                      <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+                        Quick Text Input
+                      </p>
+                      <textarea
+                        value={inputText}
+                        onChange={(event) => setInputText(event.target.value)}
+                        placeholder="Type English text. Example: Hello"
+                        className="ui-input h-24 w-full rounded-lg px-3 py-2 text-sm"
                       />
-                      {audioFile &&
-                      !audioFile.name.includes("recorded_audio") ? (
-                        <p className="max-w-full break-all text-sm font-medium text-emerald-400">
-                          {audioFile.name}
-                        </p>
+                      <button
+                        onClick={() => startTextTranslation()}
+                        disabled={isProcessing || !inputText.trim()}
+                        className={`mt-3 flex w-full items-center justify-center rounded-lg py-2.5 font-medium text-white transition-all ${isProcessing || !inputText.trim() ? "cursor-not-allowed bg-slate-700/80 text-slate-400" : "ui-btn-primary"}`}>
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Translating Text...
+                          </>
+                        ) : (
+                          <>
+                            <PlayCircle className="mr-2 h-4 w-4" />
+                            Start
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {inputMode === "upload" && (
+                    <div className="glass-inset rounded-xl p-3 shadow-sm">
+                      <label
+                        className={`flex h-36 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 transition-all ${audioFile && !audioFile.name.includes("recorded_audio") ? "border-pink-400/55 bg-pink-400/12" : "border-dashed border-slate-500/35 hover:border-pink-400/55 hover:bg-slate-800/55"}`}>
+                        <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
+                          <UploadCloud
+                            className={`mb-2 h-7 w-7 ${audioFile && !audioFile.name.includes("recorded_audio") ? "text-orange-300" : "text-slate-400"}`}
+                          />
+                          {audioFile &&
+                          !audioFile.name.includes("recorded_audio") ? (
+                            <p className="max-w-full break-all text-sm font-medium text-orange-300">
+                              {audioFile.name}
+                            </p>
+                          ) : (
+                            <>
+                              <p className="text-sm text-slate-400">
+                                <span className="font-semibold text-orange-300">
+                                  Click to upload
+                                </span>{" "}
+                                or drag and drop
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                .wav, .mp3, .m4a, .webm
+                              </p>
+                            </>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="audio/*"
+                          onChange={handleFileChange}
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  {inputMode === "record" && (
+                    <div
+                      className={`glass-inset flex flex-col gap-4 rounded-xl border p-4 shadow-sm transition-all sm:flex-row sm:items-center sm:justify-between ${isRecording ? "border-rose-400/60 bg-rose-400/10" : audioFile && audioFile.name.includes("recorded_audio") ? "border-pink-400/55 bg-pink-400/12" : "border-slate-500/25"}`}>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`rounded-full p-2 ${isRecording ? "animate-pulse bg-rose-500/20 text-rose-500" : "bg-slate-800 text-slate-400"}`}>
+                          <Mic className="h-5 w-5" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-slate-200">
+                            {isRecording
+                              ? "Dang ghi am..."
+                              : audioFile &&
+                                  audioFile.name.includes("recorded_audio")
+                                ? "Da ghi am xong"
+                                : "Ghi am truc tiep"}
+                          </span>
+                          <span
+                            className={`font-mono text-xs ${isRecording ? "text-rose-400" : "text-slate-500"}`}>
+                            {formatTime(recordingTime)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {isRecording ? (
+                        <button
+                          onClick={stopRecording}
+                          className="flex items-center justify-center rounded-lg bg-rose-500 p-2 text-white transition-colors hover:bg-rose-600">
+                          <Square className="mr-1.5 h-4 w-4 fill-current" />
+                          Stop
+                        </button>
                       ) : (
-                        <>
-                          <p className="text-sm text-slate-400">
-                            <span className="font-semibold text-emerald-400">
-                              Click to upload
-                            </span>{" "}
-                            or drag and drop
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            .wav, .mp3, .m4a, .webm
-                          </p>
-                        </>
+                        <button
+                          onClick={startRecording}
+                          className="ui-btn-secondary rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+                          Start
+                        </button>
                       )}
                     </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="audio/*"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-
-                  <div className="flex items-center text-xs font-semibold uppercase text-slate-500">
-                    <div className="flex-1 border-b border-slate-800"></div>
-                    <span className="mx-4">AUDIO</span>
-                    <div className="flex-1 border-b border-slate-800"></div>
-                  </div>
-
-                  <div
-                    className={`flex flex-col gap-4 rounded-xl border p-4 transition-all sm:flex-row sm:items-center sm:justify-between ${isRecording ? "border-rose-500/50 bg-rose-500/5" : audioFile && audioFile.name.includes("recorded_audio") ? "border-emerald-500 bg-emerald-500/5" : "border-slate-800 bg-slate-950/50"}`}>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`rounded-full p-2 ${isRecording ? "animate-pulse bg-rose-500/20 text-rose-500" : "bg-slate-800 text-slate-400"}`}>
-                        <Mic className="h-5 w-5" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-slate-200">
-                          {isRecording
-                            ? "Dang ghi am..."
-                            : audioFile &&
-                                audioFile.name.includes("recorded_audio")
-                              ? "Da ghi am xong"
-                              : "Ghi am truc tiep"}
-                        </span>
-                        <span
-                          className={`font-mono text-xs ${isRecording ? "text-rose-400" : "text-slate-500"}`}>
-                          {formatTime(recordingTime)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {isRecording ? (
-                      <button
-                        onClick={stopRecording}
-                        className="flex items-center justify-center rounded-lg bg-rose-500 p-2 text-white transition-colors hover:bg-rose-600">
-                        <Square className="mr-1.5 h-4 w-4 fill-current" />
-                        Stop
-                      </button>
-                    ) : (
-                      <button
-                        onClick={startRecording}
-                        className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700">
-                        Start
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
 
                 {errorMsg && (
-                  <div className="mt-4 flex items-center rounded-lg border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs text-rose-400">
+                  <div className="mt-4 ui-alert-error flex items-center rounded-lg p-2.5 text-xs">
                     <AlertCircle className="mr-2 h-4 w-4 shrink-0" />
                     {errorMsg}
                   </div>
                 )}
 
-                <div className="mt-auto pt-4">
-                  <button
-                    onClick={startTranslation}
-                    disabled={isProcessing || !audioFile || isRecording}
-                    className={`flex w-full items-center justify-center rounded-xl py-3 font-medium text-white shadow-lg transition-all ${isProcessing || !audioFile || isRecording ? "cursor-not-allowed bg-slate-800 text-slate-500" : "bg-emerald-600 shadow-emerald-900/20 hover:bg-emerald-500"}`}>
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        In progress: AI translation...
-                      </>
-                    ) : (
-                      <>
-                        <PlayCircle className="mr-2 h-5 w-5" />
-                        Start the transformation
-                      </>
-                    )}
-                  </button>
-                </div>
+                {inputMode !== "text" && (
+                  <div className="mt-auto pt-4">
+                    <button
+                      onClick={startTranslation}
+                      disabled={isProcessing || !audioFile || isRecording}
+                      className={`flex w-full items-center justify-center rounded-xl py-3 font-medium text-white shadow-lg transition-all ${isProcessing || !audioFile || isRecording ? "cursor-not-allowed bg-slate-700/80 text-slate-400" : "bg-pink-700 shadow-pink-900/25 hover:bg-pink-600"}`}>
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          In progress: AI translation...
+                        </>
+                      ) : (
+                        <>
+                          <PlayCircle className="mr-2 h-5 w-5" />
+                          Start the transformation
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div className="flex min-h-[220px] flex-1 flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg">
-                <h3 className="mb-3 flex items-center justify-between text-sm font-semibold text-slate-300">
-                  <div className="flex items-center">
-                    <span className="mr-2 rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
-                      Step 2
-                    </span>
-                    English text
-                  </div>
-                </h3>
-                <div className="flex-1 overflow-y-auto rounded-xl border border-slate-800/50 bg-slate-950 p-4 font-medium leading-relaxed text-slate-300">
-                  {transcript ? (
-                    <div className="mb-2 flex items-start">
-                      <FileText className="mt-1 mr-2 h-4 w-4 shrink-0 text-emerald-500" />
-                      <p>{transcript}</p>
-                    </div>
-                  ) : (
-                    <p className="flex h-full items-center justify-center text-sm italic text-slate-600">
-                      Wait for a response from the server...
-                    </p>
-                  )}
-                </div>
-              </div>
             </div>
 
-            <div className="flex min-h-0 flex-col xl:col-span-7">
-              <div className="relative flex min-h-[640px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg">
-                <div className="z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/50 p-4">
-                  <h2 className="flex items-center text-sm font-semibold text-emerald-400">
-                    <span className="mr-2 rounded border border-emerald-500/20 bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400">
-                      Step 3
-                    </span>
-                    Graphics Rendering (Skeletal Animation)
+            <div className="flex min-h-0 min-w-0 flex-col xl:col-span-8">
+              <div className="glass-panel relative flex h-[62vh] min-h-[420px] max-h-[680px] flex-1 flex-col overflow-hidden rounded-3xl">
+                <div className="z-10 flex items-center justify-between border-b border-slate-500/25 bg-slate-900/30 p-4">
+                  <h2 className="text-sm font-semibold text-violet-200">
+                    Output Rendering
                   </h2>
                 </div>
 
-                <div className="flex flex-1 flex-col bg-gradient-to-b from-slate-900 to-slate-950 p-4 sm:p-6">
-                  <div className="group relative mb-4 min-h-[120px] overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-4">
-                    <div className="absolute top-2 right-2 rounded bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400">
-                      Pose Source
-                    </div>
-                    <p className="break-all font-mono text-xs leading-relaxed text-emerald-500/80">
-                      {fswCode ||
-                        "FSW parser is disabled. Rendering from Sign-MT pose API payload."}
-                    </p>
-                  </div>
-
-                  <div className="group relative mb-4 min-h-[180px] overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-4">
-                    <div className="absolute top-2 right-2 rounded bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400">
-                      Rule Debug
-                    </div>
-                    {ruleDebug ? (
-                      <div className="space-y-2 text-xs text-slate-300">
-                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                          <div className="rounded border border-slate-800 bg-slate-900 px-2 py-1">
-                            Source:{" "}
-                            <span className="font-semibold text-emerald-400">
-                              {ruleDebug.source ?? "sign-mt-cloud"}
-                            </span>
-                          </div>
-                          <div className="rounded border border-slate-800 bg-slate-900 px-2 py-1">
-                            Frame Count:{" "}
-                            <span className="font-semibold text-emerald-400">
-                              {ruleDebug.frame_count ??
-                                poseBuffer?.frames.length ??
-                                0}
-                            </span>
-                          </div>
-                          <div className="rounded border border-slate-800 bg-slate-900 px-2 py-1 md:col-span-2">
-                            Endpoint:{" "}
-                            <span className="font-semibold text-emerald-400">
-                              {String(ruleDebug.endpoint ?? "N/A")}
-                            </span>
-                          </div>
-                        </div>
-                        <pre className="whitespace-pre-wrap break-all rounded border border-slate-800 bg-slate-900 p-2 text-[11px] leading-relaxed text-cyan-300/90">
-                          {JSON.stringify(ruleDebug, null, 2)}
-                        </pre>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-600">
-                        Waiting for rule-debug JSON payload from server...
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="relative flex min-h-[360px] flex-1 items-center justify-center overflow-hidden rounded-xl border border-slate-800 bg-black p-2">
+                <div className="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-slate-900/35 to-slate-950/40 p-4 sm:p-6">
+                  <div className="glass-inset relative flex min-h-[320px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/65 p-2">
                     {poseBuffer ? (
                       <PoseViewer buffer={poseBuffer} />
                     ) : (
                       <p className="text-sm text-slate-600">
                         2D/3D Canvas Display Space
                       </p>
+                    )}
+                  </div>
+
+                  <div className="mt-3 rounded-xl border border-white/14 bg-black/60 px-5 py-3 text-center text-base text-slate-100 backdrop-blur-sm">
+                    {transcript ? (
+                      <span className="line-clamp-2 leading-relaxed tracking-[0.01em]">
+                        {transcript}
+                      </span>
+                    ) : (
+                      <span className="text-slate-300">
+                        Waiting for recognized text...
+                      </span>
                     )}
                   </div>
                 </div>
@@ -951,8 +920,8 @@ export default function SignLanguageUI() {
 
         {activeTab === "dictionary" && (
           <div className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-12">
-            <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg xl:col-span-4">
-              <h3 className="text-sm font-semibold text-slate-300">
+            <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-4">
+              <h3 className="text-sm font-semibold ">
                 Dictionary Search
               </h3>
               <div className="flex flex-col gap-2">
@@ -969,38 +938,38 @@ export default function SignLanguageUI() {
                     }
                   }}
                   placeholder="Search gloss or phrase"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                 />
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={loadDictionary}
-                  className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-emerald-500">
+                  className="flex items-center gap-2 rounded-lg bg-pink-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-pink-600">
                   <Search className="h-4 w-4" />
                   Search
                 </button>
                 <button
                   onClick={loadDictionary}
-                  className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-300 transition hover:border-emerald-500/40">
+                  className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-4 py-2 text-xs font-semibold uppercase tracking-wide  transition hover:border-pink-300/45">
                   <RefreshCw className="h-4 w-4" />
                   Refresh
                 </button>
               </div>
               {dictError && (
-                <div className="flex items-center rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-400">
+                <div className="ui-alert-error flex items-center rounded-lg p-2 text-xs">
                   <AlertCircle className="mr-2 h-4 w-4" />
                   {dictError}
                 </div>
               )}
-              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-xs text-slate-400">
+              <div className="glass-inset rounded-xl p-4 text-xs text-slate-400">
                 Use search to pull cached signs and gloss phrases from the
                 dictionary. Click any result to reuse in translation.
               </div>
             </div>
 
-            <div className="flex min-h-[320px] flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg xl:col-span-8">
+            <div className="flex min-h-[320px] flex-col glass-panel rounded-2xl p-5 shadow-lg xl:col-span-8">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-300">
+                <h3 className="text-sm font-semibold ">
                   Results
                 </h3>
                 <span className="text-xs text-slate-500">
@@ -1017,7 +986,7 @@ export default function SignLanguageUI() {
                   dictItems.map((item) => (
                     <div
                       key={item.wordId}
-                      className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                      className="glass-inset rounded-xl p-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-slate-200">
@@ -1034,7 +1003,7 @@ export default function SignLanguageUI() {
                             setActiveTab("translate");
                             void startTextTranslation(item.englishText);
                           }}
-                          className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] uppercase text-emerald-200 transition hover:border-emerald-500/80">
+                          className="rounded-full border border-pink-300/40 bg-pink-300/12 px-3 py-1 text-[11px] uppercase text-pink-100 transition hover:border-pink-300/80">
                           Use
                         </button>
                       </div>
@@ -1045,7 +1014,7 @@ export default function SignLanguageUI() {
                           {item.signedLang ?? "ase"}
                         </span>
                         {item.poseFilePath && (
-                          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-200">
+                          <span className="rounded-full border border-pink-300/35 bg-pink-300/12 px-2 py-0.5 text-pink-100">
                             pose cached
                           </span>
                         )}
@@ -1068,21 +1037,21 @@ export default function SignLanguageUI() {
         )}
 
         {activeTab === "history" && (
-          <div className="flex min-h-[420px] flex-1 flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg">
+          <div className="flex min-h-[420px] flex-1 flex-col glass-panel rounded-2xl p-5 shadow-lg">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-slate-300">
+              <h3 className="text-sm font-semibold ">
                 Translation History
               </h3>
               <button
                 onClick={loadHistories}
-                className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950 px-3 py-1 text-[11px] uppercase text-slate-300 transition hover:border-emerald-500/40">
+                className="flex items-center gap-2 ui-btn-secondary rounded-full px-3 py-1 text-[11px] uppercase transition">
                 <RefreshCw className="h-3.5 w-3.5" />
                 Refresh
               </button>
             </div>
 
             {!authToken ? (
-              <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-500">
+              <div className="mt-6 glass-inset rounded-xl p-4 text-sm text-slate-500">
                 Login to view your personal translation history.
               </div>
             ) : historyLoading ? (
@@ -1091,7 +1060,7 @@ export default function SignLanguageUI() {
                 Loading histories...
               </div>
             ) : historyError ? (
-              <div className="mt-6 flex items-center rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-400">
+              <div className="mt-6 ui-alert-error flex items-center rounded-lg p-2 text-xs">
                 <AlertCircle className="mr-2 h-4 w-4" />
                 {historyError}
               </div>
@@ -1100,7 +1069,7 @@ export default function SignLanguageUI() {
                 {historyItems.map((item) => (
                   <div
                     key={item.historyId}
-                    className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                    className="glass-inset rounded-xl p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-slate-200">
@@ -1109,14 +1078,14 @@ export default function SignLanguageUI() {
                         <p className="mt-1 text-xs text-slate-500">
                           {formatDate(item.createdAt)}
                           {item.processingTimeMs
-                            ? ` · ${item.processingTimeMs} ms`
+                            ? ` Â· ${item.processingTimeMs} ms`
                             : ""}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => replayHistory(item.inputText)}
-                          className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] uppercase text-emerald-200 transition hover:border-emerald-500/80">
+                          className="rounded-full border border-pink-300/40 bg-pink-300/12 px-3 py-1 text-[11px] uppercase text-pink-100 transition hover:border-pink-300/80">
                           Replay
                         </button>
                         <button
@@ -1127,7 +1096,7 @@ export default function SignLanguageUI() {
                             }));
                             setActiveTab("feedback");
                           }}
-                          className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] uppercase text-slate-300 transition hover:border-emerald-500/40">
+                          className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] uppercase  transition hover:border-pink-300/45">
                           Feedback
                         </button>
                       </div>
@@ -1150,12 +1119,12 @@ export default function SignLanguageUI() {
 
         {activeTab === "feedback" && (
           <div className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-12">
-            <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg xl:col-span-4">
-              <h3 className="text-sm font-semibold text-slate-300">
+            <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-4">
+              <h3 className="text-sm font-semibold ">
                 Submit Feedback
               </h3>
               {!authToken ? (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-500">
+                <div className="glass-inset rounded-xl p-4 text-sm text-slate-500">
                   Login to submit feedback.
                 </div>
               ) : (
@@ -1173,7 +1142,7 @@ export default function SignLanguageUI() {
                         }))
                       }
                       placeholder="Example: 12"
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1191,7 +1160,7 @@ export default function SignLanguageUI() {
                           rating: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1207,17 +1176,17 @@ export default function SignLanguageUI() {
                         }))
                       }
                       placeholder="Your feedback..."
-                      className="h-24 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input h-24 w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <button
                     onClick={submitFeedback}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-emerald-500">
+                    className="flex items-center justify-center gap-2 rounded-lg bg-pink-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-pink-600">
                     <MessageSquare className="h-4 w-4" />
                     Send Feedback
                   </button>
                   {feedbackError && (
-                    <div className="flex items-center rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-400">
+                    <div className="ui-alert-error flex items-center rounded-lg p-2 text-xs">
                       <AlertCircle className="mr-2 h-4 w-4" />
                       {feedbackError}
                     </div>
@@ -1226,14 +1195,14 @@ export default function SignLanguageUI() {
               )}
             </div>
 
-            <div className="flex min-h-[320px] flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg xl:col-span-8">
+            <div className="flex min-h-[320px] flex-col glass-panel rounded-2xl p-5 shadow-lg xl:col-span-8">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-300">
+                <h3 className="text-sm font-semibold ">
                   Your Feedbacks
                 </h3>
                 <button
                   onClick={loadFeedbacks}
-                  className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950 px-3 py-1 text-[11px] uppercase text-slate-300 transition hover:border-emerald-500/40">
+                  className="flex items-center gap-2 ui-btn-secondary rounded-full px-3 py-1 text-[11px] uppercase transition">
                   <RefreshCw className="h-3.5 w-3.5" />
                   Refresh
                 </button>
@@ -1252,7 +1221,7 @@ export default function SignLanguageUI() {
                   feedbackItems.map((item) => (
                     <div
                       key={item.feedbackId}
-                      className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                      className="glass-inset rounded-xl p-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-sm font-semibold text-slate-200">
                           Rating: {item.rating ?? "-"}/5
@@ -1287,8 +1256,8 @@ export default function SignLanguageUI() {
           <div className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-12">
             {!authToken ? (
               <>
-                <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg xl:col-span-6">
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+                <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-6">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold ">
                     <LogIn className="h-4 w-4" />
                     Login
                   </h3>
@@ -1304,7 +1273,7 @@ export default function SignLanguageUI() {
                           username: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1320,19 +1289,19 @@ export default function SignLanguageUI() {
                           password: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <button
                     onClick={handleLogin}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-emerald-500">
+                    className="flex items-center justify-center gap-2 rounded-lg bg-pink-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-pink-600">
                     <LogIn className="h-4 w-4" />
                     Login
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg xl:col-span-6">
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+                <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-6">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold ">
                     <UserCircle className="h-4 w-4" />
                     Register
                   </h3>
@@ -1348,7 +1317,7 @@ export default function SignLanguageUI() {
                           username: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1364,7 +1333,7 @@ export default function SignLanguageUI() {
                           email: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1380,12 +1349,12 @@ export default function SignLanguageUI() {
                           password: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <button
                     onClick={handleRegister}
-                    className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-200 transition hover:border-emerald-500/80">
+                    className="flex items-center justify-center gap-2 rounded-lg border border-pink-300/40 bg-pink-300/12 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-pink-100 transition hover:border-pink-300/80">
                     <UserCircle className="h-4 w-4" />
                     Create account
                   </button>
@@ -1393,14 +1362,14 @@ export default function SignLanguageUI() {
               </>
             ) : (
               <>
-                <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg xl:col-span-5">
+                <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-5">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-300">
+                    <h3 className="text-sm font-semibold ">
                       Profile
                     </h3>
                     <button
                       onClick={loadProfile}
-                      className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950 px-3 py-1 text-[11px] uppercase text-slate-300 transition hover:border-emerald-500/40">
+                      className="flex items-center gap-2 ui-btn-secondary rounded-full px-3 py-1 text-[11px] uppercase transition">
                       <RefreshCw className="h-3.5 w-3.5" />
                       Refresh
                     </button>
@@ -1411,22 +1380,22 @@ export default function SignLanguageUI() {
                       Loading profile...
                     </div>
                   ) : profile ? (
-                    <div className="space-y-2 text-sm text-slate-300">
+                    <div className="space-y-2 text-sm ">
                       <div className="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2">
                         Username:{" "}
-                        <span className="text-emerald-300">
+                        <span className="text-violet-200">
                           {profile.username}
                         </span>
                       </div>
                       <div className="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2">
                         Email:{" "}
-                        <span className="text-emerald-300">
+                        <span className="text-violet-200">
                           {profile.email ?? "-"}
                         </span>
                       </div>
                       <div className="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2">
                         Roles:{" "}
-                        <span className="text-emerald-300">
+                        <span className="text-violet-200">
                           {Array.isArray(profile.roles)
                             ? profile.roles.join(", ")
                             : (profile.roles ?? "-")}
@@ -1434,7 +1403,7 @@ export default function SignLanguageUI() {
                       </div>
                       <div className="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2">
                         Created:{" "}
-                        <span className="text-emerald-300">
+                        <span className="text-violet-200">
                           {formatDate(profile.createdAt)}
                         </span>
                       </div>
@@ -1443,15 +1412,15 @@ export default function SignLanguageUI() {
                     <p className="text-sm text-slate-500">No profile loaded.</p>
                   )}
                   {profileError && (
-                    <div className="flex items-center rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-400">
+                    <div className="ui-alert-error flex items-center rounded-lg p-2 text-xs">
                       <AlertCircle className="mr-2 h-4 w-4" />
                       {profileError}
                     </div>
                   )}
                 </div>
 
-                <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg xl:col-span-7">
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+                <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-7">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold ">
                     <UserCircle className="h-4 w-4" />
                     Update Account
                   </h3>
@@ -1465,12 +1434,12 @@ export default function SignLanguageUI() {
                       onChange={(event) =>
                         setProfileForm({ email: event.target.value })
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <button
                     onClick={updateProfile}
-                    className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-200 transition hover:border-emerald-500/80">
+                    className="flex items-center justify-center gap-2 rounded-lg border border-pink-300/40 bg-pink-300/12 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-pink-100 transition hover:border-pink-300/80">
                     <UserCircle className="h-4 w-4" />
                     Save profile
                   </button>
@@ -1492,7 +1461,7 @@ export default function SignLanguageUI() {
                           oldPassword: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1508,12 +1477,12 @@ export default function SignLanguageUI() {
                           newPassword: event.target.value,
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="ui-input w-full rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                   <button
                     onClick={updatePassword}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-emerald-500">
+                    className="flex items-center justify-center gap-2 rounded-lg bg-pink-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-pink-600">
                     <KeyRound className="h-4 w-4" />
                     Update password
                   </button>
@@ -1523,7 +1492,7 @@ export default function SignLanguageUI() {
 
             {authMessage && (
               <div className="xl:col-span-12">
-                <div className="flex items-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs text-emerald-200">
+                <div className="flex items-center rounded-lg border border-pink-300/35 bg-pink-300/12 p-2 text-xs text-pink-100">
                   <UserCircle className="mr-2 h-4 w-4" />
                   {authMessage}
                 </div>
@@ -1531,7 +1500,27 @@ export default function SignLanguageUI() {
             )}
           </div>
         )}
-      </div>
+      </main>
+
+      <footer className="app-footer-shell relative z-10 mt-4">
+        <div className="mx-auto w-full max-w-[1600px] px-4 py-2 text-xs sm:px-6 sm:py-2 lg:px-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span>S2S Platform · Speech to Sign Pipeline · Production</span>
+            <span className="text-violet-200/90">
+              Secure API · Responsive UI · Accessibility-first
+            </span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+

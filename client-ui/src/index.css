@@ -2,16 +2,13 @@
 
 html {
   min-height: 100%;
-  background: #020617;
+  background: #050507;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at top, rgba(16, 185, 129, 0.14), transparent 28%),
-    linear-gradient(180deg, #020617 0%, #0f172a 100%);
-  color: #e2e8f0;
+  color: #f7f0f6;
 }
 
 body,
@@ -21,4 +18,254 @@ body,
 
 * {
   box-sizing: border-box;
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid color-mix(in oklab, var(--glass-border) 42%, transparent);
+  box-shadow:
+    0 12px 28px rgba(8, 12, 22, 0.24),
+    0 2px 8px rgba(10, 14, 26, 0.16);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+.glass-panel-soft {
+  background: var(--glass-soft-bg);
+  border: 1px solid var(--glass-soft-border);
+  backdrop-filter: blur(14px) saturate(125%);
+}
+
+.glass-inset {
+  border: 1px solid color-mix(in oklab, var(--glass-soft-border) 35%, transparent);
+  background: var(--glass-inset-bg);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+
+.app-shell {
+  min-height: 100vh;
+  color: var(--text-main);
+  background:
+    radial-gradient(900px 520px at 0% -8%, var(--bg-blob-1), transparent 58%),
+    radial-gradient(880px 560px at 100% -10%, var(--bg-blob-2), transparent 62%),
+    radial-gradient(2px 2px at 16% 22%, rgba(255, 255, 255, 0.55), transparent 42%),
+    radial-gradient(1.8px 1.8px at 72% 14%, rgba(255, 255, 255, 0.45), transparent 42%),
+    radial-gradient(2px 2px at 88% 38%, rgba(255, 255, 255, 0.44), transparent 42%),
+    radial-gradient(1.6px 1.6px at 42% 74%, rgba(255, 255, 255, 0.4), transparent 42%),
+    radial-gradient(1.4px 1.4px at 55% 33%, rgba(167, 243, 208, 0.35), transparent 42%),
+    radial-gradient(1.4px 1.4px at 28% 62%, rgba(196, 181, 253, 0.32), transparent 42%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 52%, var(--bg-bottom) 100%);
+  position: relative;
+}
+
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.9;
+  background-image:
+    radial-gradient(2px 2px at 12% 18%, rgba(255, 255, 255, 0.52), transparent 42%),
+    radial-gradient(1.6px 1.6px at 38% 27%, rgba(255, 255, 255, 0.45), transparent 42%),
+    radial-gradient(1.8px 1.8px at 63% 22%, rgba(255, 255, 255, 0.5), transparent 42%),
+    radial-gradient(1.5px 1.5px at 81% 31%, rgba(255, 255, 255, 0.42), transparent 42%),
+    radial-gradient(1.6px 1.6px at 23% 66%, rgba(196, 181, 253, 0.3), transparent 42%),
+    radial-gradient(1.4px 1.4px at 71% 72%, rgba(134, 239, 172, 0.28), transparent 42%),
+    radial-gradient(1.4px 1.4px at 48% 83%, rgba(251, 146, 60, 0.26), transparent 42%);
+}
+
+.theme-dark {
+  --bg-top: #04060c;
+  --bg-mid: #0b1020;
+  --bg-bottom: #12172a;
+  --bg-blob-1: rgba(124, 58, 237, 0.14);
+  --bg-blob-2: rgba(217, 70, 239, 0.12);
+  --text-main: #eef2ff;
+  --glass-bg: linear-gradient(145deg, rgba(16, 22, 40, 0.82), rgba(10, 14, 26, 0.72));
+  --glass-soft-bg: linear-gradient(160deg, rgba(20, 27, 46, 0.74), rgba(11, 16, 30, 0.62));
+  --glass-border: rgba(167, 139, 250, 0.3);
+  --glass-soft-border: rgba(167, 139, 250, 0.22);
+  --glass-inset-bg: rgba(10, 14, 28, 0.72);
+  --glass-highlight: rgba(196, 181, 253, 0.2);
+  --glass-shadow: 0 16px 40px rgba(11, 4, 12, 0.45);
+  --accent: #a78bfa;
+  --accent-strong: #8b5cf6;
+  --accent-soft: rgba(167, 139, 250, 0.2);
+  --accent-green: #34d399;
+  --accent-orange: #fb923c;
+  --accent-violet: #c084fc;
+  --danger-soft: rgba(251, 113, 133, 0.16);
+}
+
+.theme-light {
+  --bg-top: #f7f8fc;
+  --bg-mid: #f0f3f9;
+  --bg-bottom: #e8edf7;
+  --bg-blob-1: rgba(124, 58, 237, 0.06);
+  --bg-blob-2: rgba(217, 70, 239, 0.05);
+  --text-main: #1f2937;
+  --glass-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.93), rgba(244, 247, 255, 0.88));
+  --glass-soft-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.91), rgba(240, 244, 255, 0.84));
+  --glass-border: rgba(99, 102, 241, 0.2);
+  --glass-soft-border: rgba(99, 102, 241, 0.16);
+  --glass-inset-bg: rgba(255, 255, 255, 0.9);
+  --glass-highlight: rgba(255, 255, 255, 0.75);
+  --glass-shadow: 0 12px 28px rgba(30, 64, 175, 0.1);
+  --accent: #6366f1;
+  --accent-strong: #4f46e5;
+  --accent-soft: rgba(99, 102, 241, 0.14);
+  --accent-green: #10b981;
+  --accent-orange: #fb923c;
+  --accent-violet: #7c3aed;
+  --danger-soft: rgba(251, 113, 133, 0.14);
+}
+
+.theme-light::before {
+  opacity: 0;
+}
+
+.ui-tab-active {
+  border-color: color-mix(in oklab, var(--accent) 28%, transparent);
+  background: color-mix(in oklab, var(--accent-soft) 70%, transparent);
+  color: var(--text-main);
+}
+
+.ui-tab-idle {
+  border-color: color-mix(in oklab, var(--accent) 8%, transparent);
+  background: transparent;
+  color: color-mix(in oklab, var(--text-main) 86%, #64748b);
+}
+
+.ui-tab-idle:hover {
+  border-color: color-mix(in oklab, var(--accent) 20%, transparent);
+  background: color-mix(in oklab, var(--glass-inset-bg) 52%, transparent);
+  color: var(--text-main);
+}
+
+.ui-input {
+  border: 1px solid var(--glass-soft-border);
+  background: color-mix(in oklab, var(--glass-inset-bg) 86%, transparent);
+  color: var(--text-main);
+}
+
+.ui-input::placeholder {
+  color: color-mix(in oklab, var(--text-main) 50%, #94a3b8);
+}
+
+.ui-input:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 56%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 26%, transparent);
+}
+
+.ui-btn-primary {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.ui-btn-primary:hover {
+  background: var(--accent);
+}
+
+.ui-btn-secondary {
+  border: 1px solid var(--glass-soft-border);
+  background: color-mix(in oklab, var(--glass-inset-bg) 85%, transparent);
+  color: var(--text-main);
+}
+
+.ui-btn-secondary:hover {
+  border-color: color-mix(in oklab, var(--accent) 48%, transparent);
+}
+
+.ui-alert-error {
+  border: 1px solid color-mix(in oklab, #fb7185 36%, transparent);
+  background: var(--danger-soft);
+  color: color-mix(in oklab, #ffe4e6 70%, var(--text-main));
+}
+
+.app-header-shell {
+  position: relative;
+  top: auto;
+  left: 0;
+  z-index: 40;
+  width: 100%;
+  border-bottom: 1px solid color-mix(in oklab, var(--accent) 20%, transparent);
+  background: color-mix(in oklab, var(--bg-top) 84%, transparent);
+  backdrop-filter: blur(12px) saturate(115%);
+}
+
+.app-header-shell.compact {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  box-shadow: 0 8px 20px rgba(5, 3, 8, 0.42);
+}
+
+.app-main-offset {
+  padding-top: 10px;
+}
+
+@media (min-width: 640px) {
+  .app-main-offset {
+    padding-top: 12px;
+  }
+}
+
+.app-main-offset.compact {
+  padding-top: 78px;
+}
+
+@media (min-width: 640px) {
+  .app-main-offset.compact {
+    padding-top: 84px;
+  }
+}
+
+.app-footer-shell {
+  width: 100%;
+  border-top: 1px solid color-mix(in oklab, var(--accent) 28%, transparent);
+  background: color-mix(in oklab, var(--bg-bottom) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+.theme-light .text-slate-100 { color: #1f2937 !important; }
+.theme-light .text-slate-200 { color: #243142 !important; }
+.theme-light .text-slate-300 { color: #334155 !important; }
+.theme-light .text-slate-400 { color: #475569 !important; }
+.theme-light .text-slate-500 { color: #64748b !important; }
+.theme-light .text-slate-600 { color: #6b7280 !important; }
+.theme-light .text-white { color: #1f2937 !important; }
+
+.pose-viewer-fit {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  margin: 0;
+  transform: none;
+}
+
+.pose-viewer-stage {
+  width: auto;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 1280px) {
+  .pose-viewer-stage {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .pose-viewer-stage {
+    max-width: 100%;
+  }
 }
