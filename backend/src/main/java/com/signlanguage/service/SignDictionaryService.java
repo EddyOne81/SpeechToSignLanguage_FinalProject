@@ -61,7 +61,6 @@ public class SignDictionaryService {
                 .spokenLang(spokenLang)
                 .signedLang(signedLang)
                 .cacheSource(cacheSource)
-                .fswCode(request.getFswCode())
                 .poseFilePath(request.getPoseFilePath())
                 .isVerified(request.getIsVerified() == null ? false : request.getIsVerified())
                 .verifiedBy(resolveVerifiedBy(request.getVerifiedByUserId()))
@@ -104,9 +103,6 @@ public class SignDictionaryService {
         }
         if (request.getCacheSource() != null) {
             dictionary.setCacheSource(request.getCacheSource());
-        }
-        if (request.getFswCode() != null) {
-            dictionary.setFswCode(request.getFswCode());
         }
         if (request.getPoseFilePath() != null) {
             dictionary.setPoseFilePath(request.getPoseFilePath());
@@ -155,7 +151,6 @@ public class SignDictionaryService {
         result.put("spokenLang", dictionary.getSpokenLang() == null ? "" : dictionary.getSpokenLang());
         result.put("signedLang", dictionary.getSignedLang() == null ? "" : dictionary.getSignedLang());
         result.put("cacheSource", dictionary.getCacheSource() == null ? null : dictionary.getCacheSource().name());
-        result.put("fswCode", dictionary.getFswCode() == null ? "" : dictionary.getFswCode());
         result.put("poseFilePath", dictionary.getPoseFilePath() == null ? "" : dictionary.getPoseFilePath());
         result.put("isVerified", dictionary.getIsVerified() == null ? false : dictionary.getIsVerified());
         result.put("verifiedByUserId", dictionary.getVerifiedBy() == null ? null : dictionary.getVerifiedBy().getUserId());

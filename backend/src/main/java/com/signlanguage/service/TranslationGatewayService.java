@@ -308,7 +308,6 @@ public class TranslationGatewayService {
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("recognized_text_en", text);
-        payload.put("fsw_code", dictionary.getFswCode() == null ? "" : dictionary.getFswCode());
         payload.put("pose_coordinates", Collections.emptyList());
         payload.put("pose_source_url", poseSourceUrl);
         payload.put("fps", DEFAULT_CACHE_FPS);
@@ -377,7 +376,6 @@ public class TranslationGatewayService {
                 .spokenLang(spokenLang)
                 .signedLang(signedLang)
                 .cacheSource(DictionaryCacheSource.AUTO_CACHED)
-                .fswCode(asString(payload.get("fsw_code")))
                 .poseFilePath(posePath.toString())
                 .isVerified(false)
                 .build();
