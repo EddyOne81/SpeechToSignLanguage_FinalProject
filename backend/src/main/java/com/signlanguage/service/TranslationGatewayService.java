@@ -81,7 +81,12 @@ public class TranslationGatewayService {
                     normalizedSigned,
                     "cache-phrase"
             );
-            saveHistoryIfAuthenticated(payload, cleanText, elapsedMs(startTime));
+            saveHistoryIfAuthenticated(
+                payload,
+                cleanText,
+                elapsedMs(startTime),
+                cachedPhrase.get().getWordId()
+            );
             return payload;
         }
 
@@ -102,7 +107,18 @@ public class TranslationGatewayService {
         Map<String, Object> payload = extractPayload(aiResponse);
         patchPoseSourceUrl(payload, cleanText, normalizedSpoken, normalizedSigned);
         autoCachePoseIfNeeded(cleanText, normalizedText, normalizedSpoken, normalizedSigned, payload);
-        saveHistoryIfAuthenticated(payload, cleanText, elapsedMs(startTime));
+        Optional<SignDictionary> linkedEntry = findCachedEntry(
+            normalizedText,
+            guessEntryType(normalizedText),
+            normalizedSpoken,
+            normalizedSigned
+        );
+        saveHistoryIfAuthenticated(
+            payload,
+            cleanText,
+            elapsedMs(startTime),
+            linkedEntry.map(SignDictionary::getWordId).orElse(null)
+        );
         return payload;
     }
 
@@ -150,7 +166,18 @@ public class TranslationGatewayService {
                     normalizedSigned,
                     payload
             );
-            saveHistoryIfAuthenticated(payload, recognizedText, elapsedMs(startTime));
+            Optional<SignDictionary> linkedEntry = findCachedEntry(
+                    normalizeText(recognizedText),
+                    guessEntryType(normalizeText(recognizedText)),
+                    normalizedSpoken,
+                    normalizedSigned
+            );
+            saveHistoryIfAuthenticated(
+                    payload,
+                    recognizedText,
+                    elapsedMs(startTime),
+                    linkedEntry.map(SignDictionary::getWordId).orElse(null)
+            );
             return payload;
         } catch (IOException ex) {
             throw new RuntimeException("Unable to read uploaded audio file");
@@ -204,14 +231,20 @@ public class TranslationGatewayService {
         }
     }
 
-    private void saveHistoryIfAuthenticated(Map<String, Object> payload, String inputText, int processingTimeMs) {
+        private void saveHistoryIfAuthenticated(
+            Map<String, Object> payload,
+            String inputText,
+            int processingTimeMs,
+            Long wordId
+        ) {
         translationHistoryService.saveFromGatewayIfAuthenticated(
-                inputText,
-                asString(payload.get("fsw_code")),
-                asString(payload.get("pose_source_url")),
-                processingTimeMs
+            inputText,
+            asString(payload.get("fsw_code")),
+            asString(payload.get("pose_source_url")),
+            processingTimeMs,
+            wordId
         );
-    }
+        }
 
     private int elapsedMs(long startTime) {
         long elapsed = System.currentTimeMillis() - startTime;
@@ -275,7 +308,6 @@ public class TranslationGatewayService {
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("recognized_text_en", text);
-        payload.put("fsw_code", dictionary.getFswCode() == null ? "" : dictionary.getFswCode());
         payload.put("pose_coordinates", Collections.emptyList());
         payload.put("pose_source_url", poseSourceUrl);
         payload.put("fps", DEFAULT_CACHE_FPS);
@@ -344,7 +376,6 @@ public class TranslationGatewayService {
                 .spokenLang(spokenLang)
                 .signedLang(signedLang)
                 .cacheSource(DictionaryCacheSource.AUTO_CACHED)
-                .fswCode(asString(payload.get("fsw_code")))
                 .poseFilePath(posePath.toString())
                 .isVerified(false)
                 .build();

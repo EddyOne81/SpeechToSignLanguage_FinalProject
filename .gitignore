@@ -50,5 +50,5 @@ coverage/
 *.tmp
 *.temp
 
-#Data nhé
-data
+#Data
+data/

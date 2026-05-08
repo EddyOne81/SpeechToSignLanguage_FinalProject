@@ -100,7 +100,13 @@ public class TranslationHistoryService {
 	}
 
 	@Transactional
-	public void saveFromGatewayIfAuthenticated(String inputText, String fswResult, String poseFilePath, Integer processingTimeMs) {
+	public void saveFromGatewayIfAuthenticated(
+			String inputText,
+			String fswResult,
+			String poseFilePath,
+			Integer processingTimeMs,
+			Long wordId
+	) {
 		UserSignLanguage user;
 		try {
 			user = currentUserService.requireCurrentUser();
@@ -110,6 +116,7 @@ public class TranslationHistoryService {
 
 		TranslationHistory history = TranslationHistory.builder()
 				.user(user)
+				.word(resolveWord(wordId))
 				.inputText(inputText)
 				.fswResult(fswResult)
 				.poseFilePath(poseFilePath)

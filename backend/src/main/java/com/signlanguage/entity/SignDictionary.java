@@ -31,9 +31,6 @@ public class SignDictionary {
     @Column(length = 24)
     private DictionaryCacheSource cacheSource;
 
-    @Column(columnDefinition = "TEXT")
-    private String fswCode;
-
     private String poseFilePath;
 
     private Boolean isVerified;
