@@ -5,6 +5,7 @@ import com.signlanguage.entity.TranslationHistory;
 import com.signlanguage.entity.UserSignLanguage;
 import com.signlanguage.repository.SignDictionaryRepository;
 import com.signlanguage.repository.TranslationHistoryRepository;
+import com.signlanguage.repository.UserFeedbackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,10 +22,15 @@ public class TranslationHistoryService {
 	private final TranslationHistoryRepository historyRepository;
 	private final SignDictionaryRepository dictionaryRepository;
 	private final CurrentUserService currentUserService;
+	private final UserFeedbackRepository feedbackRepository;
 
 	@Transactional(readOnly = true)
-	public Page<Map<String, Object>> getMyHistories(Pageable pageable) {
+	public Page<Map<String, Object>> getMyHistories(String query, Pageable pageable) {
 		UserSignLanguage user = currentUserService.requireCurrentUser();
+		if (query != null && !query.isBlank()) {
+			return historyRepository.findByUserUserIdAndInputTextContainingIgnoreCaseOrderByCreatedAtDesc(user.getUserId(), query, pageable)
+					.map(this::toResponse);
+		}
 		return historyRepository.findByUserUserIdOrderByCreatedAtDesc(user.getUserId(), pageable)
 				.map(this::toResponse);
 	}
@@ -83,6 +89,9 @@ public class TranslationHistoryService {
 	@Transactional
 	public Map<String, Object> deleteMyHistory(Long historyId) {
 		UserSignLanguage user = currentUserService.requireCurrentUser();
+		historyRepository.findByHistoryIdAndUserUserId(historyId, user.getUserId())
+				.orElseThrow(() -> new RuntimeException("History not found"));
+		feedbackRepository.deleteByHistoryHistoryId(historyId);
 		long deleted = historyRepository.deleteByHistoryIdAndUserUserId(historyId, user.getUserId());
 		return Map.of("deleted", deleted > 0);
 	}
@@ -90,6 +99,7 @@ public class TranslationHistoryService {
 	@Transactional
 	public Map<String, Object> deleteAllMyHistories() {
 		UserSignLanguage user = currentUserService.requireCurrentUser();
+		feedbackRepository.deleteByHistoryUserUserId(user.getUserId());
 		long deleted = historyRepository.deleteByUserUserId(user.getUserId());
 		return Map.of("deletedCount", deleted);
 	}

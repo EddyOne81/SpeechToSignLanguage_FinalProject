@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -28,9 +29,13 @@ public class UserFeedbackController {
     private final CurrentUserService currentUserService;
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMyFeedbacks(Pageable pageable) {
+    public ResponseEntity<?> getMyFeedbacks(
+            @RequestParam(required = false) Long historyId,
+            Pageable pageable) {
         UserSignLanguage user = currentUserService.requireCurrentUser();
-        Page<UserFeedback> page = feedbackRepository.findByUserUserIdOrderByCreatedAtDesc(user.getUserId(), pageable);
+        Page<UserFeedback> page = historyId == null
+                ? feedbackRepository.findByUserUserId(user.getUserId(), pageable)
+                : feedbackRepository.findByUserUserIdAndHistoryHistoryId(user.getUserId(), historyId, pageable);
         return ApiResponses.ok(page.map(this::toResponse));
     }
 
@@ -45,8 +50,14 @@ public class UserFeedbackController {
     @PostMapping("/me")
     public ResponseEntity<?> createMyFeedback(@RequestBody UpsertFeedbackRequest request) {
         UserSignLanguage user = currentUserService.requireCurrentUser();
+        if (request.getRating() == null || request.getRating() < 1 || request.getRating() > 5) {
+            throw new RuntimeException("Rating must be between 1 and 5");
+        }
         TranslationHistory history = historyRepository.findByHistoryIdAndUserUserId(request.getHistoryId(), user.getUserId())
                 .orElseThrow(() -> new RuntimeException("History not found or not owned by current user"));
+        if (feedbackRepository.findByUserUserIdAndHistoryHistoryId(user.getUserId(), request.getHistoryId()).isPresent()) {
+            throw new RuntimeException("Feedback for this history already exists");
+        }
 
         UserFeedback feedback = UserFeedback.builder()
                 .user(user)
@@ -66,6 +77,9 @@ public class UserFeedbackController {
                 .orElseThrow(() -> new RuntimeException("Feedback not found"));
 
         if (request.getRating() != null) {
+            if (request.getRating() < 1 || request.getRating() > 5) {
+                throw new RuntimeException("Rating must be between 1 and 5");
+            }
             feedback.setRating(request.getRating());
         }
         if (request.getComment() != null) {
@@ -82,6 +96,7 @@ public class UserFeedbackController {
     }
 
     @DeleteMapping("/me/{id}")
+    @Transactional
     public ResponseEntity<?> deleteMyFeedback(@PathVariable Long id) {
         UserSignLanguage user = currentUserService.requireCurrentUser();
         long deleted = feedbackRepository.deleteByFeedbackIdAndUserUserId(id, user.getUserId());
@@ -102,6 +117,7 @@ public class UserFeedbackController {
         result.put("rating", feedback.getRating() == null ? 0 : feedback.getRating());
         result.put("comment", feedback.getComment() == null ? "" : feedback.getComment());
         result.put("createdAt", feedback.getCreatedAt());
+        result.put("updatedAt", feedback.getUpdatedAt());
         return result;
     }
 

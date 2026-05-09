@@ -17,8 +17,10 @@ public class TranslationHistoryController {
     private final TranslationHistoryService translationHistoryService;
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMyHistories(Pageable pageable) {
-        return ApiResponses.ok(translationHistoryService.getMyHistories(pageable));
+    public ResponseEntity<?> getMyHistories(
+            @RequestParam(required = false) String q,
+            Pageable pageable) {
+        return ApiResponses.ok(translationHistoryService.getMyHistories(q, pageable));
     }
 
     @GetMapping("/me/{id}")

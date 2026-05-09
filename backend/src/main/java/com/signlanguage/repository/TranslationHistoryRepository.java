@@ -12,6 +12,7 @@ import com.signlanguage.entity.TranslationHistory;
 @Repository
 public interface TranslationHistoryRepository extends JpaRepository<TranslationHistory, Long> {
 	Page<TranslationHistory> findByUserUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+	Page<TranslationHistory> findByUserUserIdAndInputTextContainingIgnoreCaseOrderByCreatedAtDesc(Long userId, String inputText, Pageable pageable);
 	Optional<TranslationHistory> findByHistoryIdAndUserUserId(Long historyId, Long userId);
 	long deleteByHistoryIdAndUserUserId(Long historyId, Long userId);
 	long deleteByUserUserId(Long userId);
