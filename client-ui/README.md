@@ -1,73 +1,72 @@
-# React + TypeScript + Vite
+# client-ui — S2S Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + TypeScript + Vite 7 frontend cho hệ thống Speech-to-Sign Language.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+| Thư viện | Phiên bản | Vai trò |
+|---------|-----------|---------|
+| React | 19 | UI framework |
+| TypeScript | 5.9 | Type safety |
+| Vite | 7 | Build tool + dev server |
+| Tailwind CSS | 4 | Styling |
+| lucide-react | 0.577 | Icons |
+| pose-viewer | 1.2 | Web component render skeleton animation |
 
-## React Compiler
+## Cấu trúc source
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── types/
+│   └── index.ts            # Tất cả TypeScript types (PoseBuffer, HistoryItem, ...)
+├── utils/
+│   ├── api.ts              # unwrapApiResponse, extractPageContent, BACKEND_BASE_URL
+│   └── format.ts           # formatDate, formatTime
+├── components/
+│   ├── AppHeader.tsx       # Header + tab navigation + theme toggle + auth display
+│   └── AppFooter.tsx       # Footer (static)
+├── tabs/
+│   ├── TranslateTab.tsx    # Tab dịch: input text/audio/record + output skeleton
+│   ├── DictionaryTab.tsx   # Tab từ điển: search + kết quả + phân trang
+│   ├── HistoryTab.tsx      # Tab lịch sử: danh sách + replay + xóa
+│   ├── FeedbackTab.tsx     # Tab feedback: gửi + danh sách + sort
+│   └── AccountTab.tsx      # Tab tài khoản: login/register/profile/password
+├── SignLanguageUI.tsx       # Root component: toàn bộ state + handlers + layout
+├── PoseViewer.tsx           # Wrapper cho pose-viewer web component
+├── App.tsx
+├── main.tsx
+├── App.css
+└── index.css
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Cài đặt và chạy
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+```bash
+# Dev server (mặc định kết nối backend tại localhost:8080)
+VITE_BACKEND_URL=http://127.0.0.1:8080 npm run dev
+
+# Build production
+npm run build
+
+# Preview build
+npm run preview
+```
+
+## Biến môi trường
+
+| Biến | Mặc định | Mô tả |
+|------|----------|-------|
+| `VITE_BACKEND_URL` | `http://127.0.0.1:8080` | URL của Spring Boot backend |
+
+## Scripts
+
+| Lệnh | Mô tả |
+|------|-------|
+| `npm run dev` | Dev server với HMR |
+| `npm run build` | TypeScript check + Vite production build |
+| `npm run lint` | ESLint |
+| `npm run preview` | Preview bản build production |
