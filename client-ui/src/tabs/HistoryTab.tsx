@@ -56,7 +56,7 @@ export default function HistoryTab({
                 void loadHistories(0);
               }
             }}
-            placeholder="Search by text..."
+            placeholder="Search by ID or text..."
             className="ui-input min-w-[260px] flex-1 rounded-lg px-3 py-2 text-sm md:max-w-md"
           />
           <div className="flex items-center gap-2">

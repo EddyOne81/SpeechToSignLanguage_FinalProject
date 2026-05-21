@@ -66,6 +66,7 @@ export default function SignLanguageUI() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<number | null>(null);
+  const skipHistoryAutoLoadRef = useRef(false);
 
   const [transcript, setTranscript] = useState<string>("");
   const [poseBuffer, setPoseBuffer] = useState<PoseBuffer | null>(null);
@@ -149,6 +150,10 @@ export default function SignLanguageUI() {
       void loadDictionary();
     }
     if (activeTab === "history") {
+      if (skipHistoryAutoLoadRef.current) {
+        skipHistoryAutoLoadRef.current = false;
+        return;
+      }
       void loadHistories();
     }
     if (activeTab === "feedback") {
@@ -365,24 +370,38 @@ export default function SignLanguageUI() {
     setHistoryError(null);
     try {
       const query = (overrideQuery ?? historyQuery).trim();
-      const qParam = query ? `&q=${encodeURIComponent(query)}` : "";
-      const response = await apiRequest(
-        `/api/histories/me?page=${targetPage}&size=${historySize}${qParam}`,
-      );
-      const pageData = extractPageContent(response);
-      const content = pageData.content || [];
-      const totalPages = Number(pageData.totalPages ?? 0);
-      const totalElements = Number(
-        pageData.totalElements ?? pageData.numberOfElements ?? content.length ?? 0,
-      );
-      const currentPage = Number(
-        pageData.number ?? pageData.page ?? pageData.index ?? targetPage,
-      );
+      const numericId =
+        query !== "" && /^\d+$/.test(query) && Number(query) > 0
+          ? Number(query)
+          : null;
 
-      setHistoryItems(content);
-      setHistoryTotalPages(totalPages);
-      setHistoryTotalElements(totalElements);
-      setHistoryPage(Number.isNaN(currentPage) ? 0 : currentPage);
+      if (numericId !== null) {
+        const response = await apiRequest(`/api/histories/me/${numericId}`);
+        const payload = unwrapApiResponse(response);
+        setHistoryItems(payload ? [payload] : []);
+        setHistoryTotalElements(payload ? 1 : 0);
+        setHistoryTotalPages(payload ? 1 : 0);
+        setHistoryPage(0);
+      } else {
+        const qParam = query ? `&q=${encodeURIComponent(query)}` : "";
+        const response = await apiRequest(
+          `/api/histories/me?page=${targetPage}&size=${historySize}${qParam}`,
+        );
+        const pageData = extractPageContent(response);
+        const content = pageData.content || [];
+        const totalPages = Number(pageData.totalPages ?? 0);
+        const totalElements = Number(
+          pageData.totalElements ?? pageData.numberOfElements ?? content.length ?? 0,
+        );
+        const currentPage = Number(
+          pageData.number ?? pageData.page ?? pageData.index ?? targetPage,
+        );
+
+        setHistoryItems(content);
+        setHistoryTotalPages(totalPages);
+        setHistoryTotalElements(totalElements);
+        setHistoryPage(Number.isNaN(currentPage) ? 0 : currentPage);
+      }
     } catch (err: any) {
       setHistoryError(err.message || "Failed to load histories.");
     } finally {
@@ -408,9 +427,9 @@ export default function SignLanguageUI() {
       const sort = overrideSort ?? feedbackSort;
       const sortQuery =
         sort === "latest"
-          ? "updatedAt,desc"
+          ? "createdAt,desc"
           : sort === "oldest"
-            ? "updatedAt,asc"
+            ? "createdAt,asc"
             : sort === "rating_high"
               ? "rating,desc"
               : "rating,asc";
@@ -549,6 +568,7 @@ export default function SignLanguageUI() {
     try {
       const response = await apiRequest(`/api/histories/me/${historyId}`);
       const payload = unwrapApiResponse(response);
+      skipHistoryAutoLoadRef.current = true;
       setHistoryQuery(String(historyId));
       setHistoryItems(payload ? [payload] : []);
       setHistoryTotalElements(payload ? 1 : 0);
@@ -556,9 +576,8 @@ export default function SignLanguageUI() {
       setHistoryPage(0);
       setActiveTab("history");
     } catch {
-      setHistoryQuery(String(historyId));
+      setHistoryQuery("");
       setActiveTab("history");
-      void loadHistories(0);
     }
   };
 
