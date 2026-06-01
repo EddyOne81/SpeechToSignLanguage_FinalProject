@@ -101,7 +101,11 @@ export default function TranslateTab({
                 <textarea
                   value={inputText}
                   onChange={(event) => setInputText(event.target.value)}
-                  placeholder={inputLang === "vi" ? "Nhập văn bản tiếng Việt. Ví dụ: Xin chào" : "Type English text. Example: Hello"}
+                  placeholder={
+                    inputLang === "vi"
+                      ? "Nhập văn bản tiếng Việt. Ví dụ: Xin chào"
+                      : "Type English text. Example: Hello"
+                  }
                   className="ui-input h-24 w-full rounded-lg px-3 py-2 text-sm"
                 />
                 <button
@@ -131,8 +135,7 @@ export default function TranslateTab({
                     <UploadCloud
                       className={`mb-2 h-7 w-7 ${audioFile && !audioFile.name.includes("recorded_audio") ? "text-orange-300" : "text-slate-400"}`}
                     />
-                    {audioFile &&
-                    !audioFile.name.includes("recorded_audio") ? (
+                    {audioFile && !audioFile.name.includes("recorded_audio") ? (
                       <p className="max-w-full break-all text-sm font-medium text-orange-300">
                         {audioFile.name}
                       </p>
@@ -172,8 +175,7 @@ export default function TranslateTab({
                     <span className="text-sm font-medium text-slate-200">
                       {isRecording
                         ? "Dang ghi am..."
-                        : audioFile &&
-                            audioFile.name.includes("recorded_audio")
+                        : audioFile && audioFile.name.includes("recorded_audio")
                           ? "Da ghi am xong"
                           : "Ghi am truc tiep"}
                     </span>
@@ -230,27 +232,28 @@ export default function TranslateTab({
             </div>
           )}
         </div>
-
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-col xl:col-span-8">
-        <div className="glass-panel relative flex h-[62vh] min-h-[420px] max-h-[680px] flex-1 flex-col overflow-hidden rounded-3xl">
-          <div className="z-10 flex items-center justify-between border-b border-slate-500/25 bg-slate-900/30 p-4">
+        <div className="glass-panel output-panel relative flex h-[62vh] min-h-[420px] max-h-[680px] flex-1 flex-col overflow-hidden rounded-3xl">
+          <div className="output-header z-10 flex items-center justify-between border-b border-slate-500/25 bg-slate-900/30 p-4">
             <h2 className="text-sm font-semibold text-violet-200">
               Output Rendering
             </h2>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-slate-900/35 to-slate-950/40 p-4 sm:p-6">
+          <div className="output-body flex min-h-0 flex-1 flex-col bg-gradient-to-b from-slate-900/35 to-slate-950/40 p-4 sm:p-6">
             {isOfflineMode && (
               <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-2 text-xs text-amber-300">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>
-                  Offline mode: Sign-MT cloud unavailable. Translation was processed locally via Sockeye (FSW generated), but 3D animation requires cloud connectivity.
+                  Offline mode: Sign-MT cloud unavailable. Translation was
+                  processed locally via Sockeye (FSW generated), but 3D
+                  animation requires cloud connectivity.
                 </span>
               </div>
             )}
-            <div className="glass-inset relative flex min-h-[320px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/65 p-2">
+            <div className="glass-inset output-stage relative flex min-h-[320px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/65 p-2">
               {poseBuffer ? (
                 <PoseViewer buffer={poseBuffer} />
               ) : isOfflineMode ? (
@@ -264,7 +267,7 @@ export default function TranslateTab({
               )}
             </div>
 
-            <div className="mt-3 rounded-xl border border-white/14 bg-black/60 px-5 py-3 text-center text-base text-slate-100 backdrop-blur-sm">
+            <div className="output-caption mt-3 rounded-xl border border-white/14 bg-black/60 px-5 py-3 text-center text-base text-slate-100 backdrop-blur-sm">
               {transcript ? (
                 <span className="line-clamp-2 leading-relaxed tracking-[0.01em]">
                   {transcript}

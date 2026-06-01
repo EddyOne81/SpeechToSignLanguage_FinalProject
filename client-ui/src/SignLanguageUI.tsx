@@ -121,6 +121,13 @@ export default function SignLanguageUI() {
   }, [theme]);
 
   useEffect(() => {
+    document.body.dataset.theme = theme;
+    return () => {
+      delete document.body.dataset.theme;
+    };
+  }, [theme]);
+
+  useEffect(() => {
     const onScroll = () => {
       setIsHeaderCompact(window.scrollY > 18);
     };
@@ -230,7 +237,10 @@ export default function SignLanguageUI() {
       offline_mode,
     } = data;
 
-    const offline = offline_mode === true || (!pose_source_url && (!pose_coordinates || pose_coordinates.length === 0));
+    const offline =
+      offline_mode === true ||
+      (!pose_source_url &&
+        (!pose_coordinates || pose_coordinates.length === 0));
     setIsOfflineMode(offline);
     setTranscript(recognized_text_en);
 
@@ -240,10 +250,14 @@ export default function SignLanguageUI() {
         fps,
         sourceUrl: pose_source_url,
       });
-      console.log(`[System] Received ${pose_coordinates.length} JSON animation frames.`);
+      console.log(
+        `[System] Received ${pose_coordinates.length} JSON animation frames.`,
+      );
     } else {
       setPoseBuffer(null);
-      console.warn("[System] Offline mode: Sign-MT cloud unavailable, animation not available.");
+      console.warn(
+        "[System] Offline mode: Sign-MT cloud unavailable, animation not available.",
+      );
     }
   };
 
@@ -330,7 +344,10 @@ export default function SignLanguageUI() {
     setAuthMessage("Logged out.");
   };
 
-  const loadDictionary = async (targetPage = dictPage, overrideQuery?: string) => {
+  const loadDictionary = async (
+    targetPage = dictPage,
+    overrideQuery?: string,
+  ) => {
     setDictLoading(true);
     setDictError(null);
     try {
@@ -342,7 +359,10 @@ export default function SignLanguageUI() {
       const content = pageData.content || [];
       const totalPages = Number(pageData.totalPages ?? 0);
       const totalElements = Number(
-        pageData.totalElements ?? pageData.numberOfElements ?? content.length ?? 0,
+        pageData.totalElements ??
+          pageData.numberOfElements ??
+          content.length ??
+          0,
       );
       const currentPage = Number(
         pageData.number ?? pageData.page ?? pageData.index ?? targetPage,
@@ -359,7 +379,10 @@ export default function SignLanguageUI() {
     }
   };
 
-  const loadHistories = async (targetPage = historyPage, overrideQuery?: string) => {
+  const loadHistories = async (
+    targetPage = historyPage,
+    overrideQuery?: string,
+  ) => {
     if (!authToken) {
       setHistoryItems([]);
       setHistoryTotalPages(0);
@@ -391,7 +414,10 @@ export default function SignLanguageUI() {
         const content = pageData.content || [];
         const totalPages = Number(pageData.totalPages ?? 0);
         const totalElements = Number(
-          pageData.totalElements ?? pageData.numberOfElements ?? content.length ?? 0,
+          pageData.totalElements ??
+            pageData.numberOfElements ??
+            content.length ??
+            0,
         );
         const currentPage = Number(
           pageData.number ?? pageData.page ?? pageData.index ?? targetPage,
@@ -423,7 +449,9 @@ export default function SignLanguageUI() {
     setFeedbackLoading(true);
     setFeedbackError(null);
     try {
-      const searchHistoryId = (overrideHistoryId ?? feedbackHistoryIdSearch).trim();
+      const searchHistoryId = (
+        overrideHistoryId ?? feedbackHistoryIdSearch
+      ).trim();
       const sort = overrideSort ?? feedbackSort;
       const sortQuery =
         sort === "latest"
@@ -444,7 +472,10 @@ export default function SignLanguageUI() {
       const content = pageData.content || [];
       const totalPages = Number(pageData.totalPages ?? 0);
       const totalElements = Number(
-        pageData.totalElements ?? pageData.numberOfElements ?? content.length ?? 0,
+        pageData.totalElements ??
+          pageData.numberOfElements ??
+          content.length ??
+          0,
       );
       const currentPage = Number(
         pageData.number ?? pageData.page ?? pageData.index ?? targetPage,
@@ -530,7 +561,12 @@ export default function SignLanguageUI() {
 
   const deleteAllHistories = async () => {
     if (!authToken) return;
-    if (!window.confirm("Delete ALL your translation history? Associated feedbacks will also be removed. This cannot be undone.")) return;
+    if (
+      !window.confirm(
+        "Delete ALL your translation history? Associated feedbacks will also be removed. This cannot be undone.",
+      )
+    )
+      return;
     setHistoryError(null);
     try {
       await apiRequest("/api/histories/me", { method: "DELETE" });
@@ -736,8 +772,8 @@ export default function SignLanguageUI() {
         handleLogout={handleLogout}
       />
 
-      <main className={`app-main-offset ${isHeaderCompact ? "compact" : ""} relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 sm:px-6 sm:pb-6 lg:px-8`}>
-
+      <main
+        className={`app-main-offset ${isHeaderCompact ? "compact" : ""} relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 sm:px-6 sm:pb-6 lg:px-8`}>
         {activeTab === "translate" && (
           <TranslateTab
             inputMode={inputMode}
