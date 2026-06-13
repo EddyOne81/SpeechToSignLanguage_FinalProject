@@ -37,14 +37,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         );
     }
 
-        private Set<SimpleGrantedAuthority> buildAuthorities(Role role) {
-        Set<SimpleGrantedAuthority> roleAuthorities = Set.of(new SimpleGrantedAuthority(role.getCode()));
-        Set<SimpleGrantedAuthority> permissionAuthorities = role.getPermissions().stream()
-            .map(Permission::getCode)
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toSet());
+    private Set<SimpleGrantedAuthority> buildAuthorities(Role role) {
+    Set<SimpleGrantedAuthority> roleAuthorities = Set.of(new SimpleGrantedAuthority(role.getCode()));
+    Set<SimpleGrantedAuthority> permissionAuthorities = role.getPermissions().stream()
+        .map(Permission::getCode)
+        .map(SimpleGrantedAuthority::new)
+        .collect(Collectors.toSet());
 
-        return java.util.stream.Stream.concat(roleAuthorities.stream(), permissionAuthorities.stream())
-            .collect(Collectors.toSet());
-        }
+    return java.util.stream.Stream.concat(roleAuthorities.stream(), permissionAuthorities.stream())
+        .collect(Collectors.toSet());
+    }
 }
