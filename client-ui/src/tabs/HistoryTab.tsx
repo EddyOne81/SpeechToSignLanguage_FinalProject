@@ -78,7 +78,7 @@ export default function HistoryTab({
             {authToken && historyTotalElements > 0 && (
               <button
                 onClick={() => void deleteAllHistories()}
-                className="flex items-center gap-1.5 rounded-lg border border-rose-400/35 bg-rose-400/10 px-3 py-1.5 text-[11px] uppercase text-rose-300 transition hover:border-rose-400/60 hover:bg-rose-400/20">
+                className="ui-pill-danger flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] uppercase transition">
                 <Trash2 className="h-3.5 w-3.5" />
                 Delete All
               </button>
@@ -125,7 +125,7 @@ export default function HistoryTab({
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => replayHistory(item.inputText)}
-                    className="rounded-full border border-pink-300/40 bg-pink-300/12 px-3 py-1 text-[11px] uppercase text-pink-100 transition hover:border-pink-300/80">
+                    className="ui-pill-accent rounded-full px-3 py-1 text-[11px] uppercase transition">
                     Replay
                   </button>
                   <button
@@ -136,22 +136,17 @@ export default function HistoryTab({
                       }));
                       setActiveTab("feedback");
                     }}
-                    className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] uppercase transition hover:border-pink-300/45">
+                    className="ui-pill-neutral rounded-full px-3 py-1 text-[11px] uppercase transition">
                     Feedback
                   </button>
                   <button
                     onClick={() => void deleteHistory(item.historyId)}
-                    className="rounded-full border border-rose-400/35 bg-rose-400/10 px-3 py-1 text-[11px] uppercase text-rose-300 transition hover:border-rose-400/60 hover:bg-rose-400/20">
+                    className="ui-pill-danger rounded-full px-3 py-1 text-[11px] uppercase transition">
                     <Trash2 className="inline h-3 w-3 mr-1" />
                     Delete
                   </button>
                 </div>
               </div>
-              {item.poseFilePath && (
-                <p className="mt-3 text-xs text-slate-500">
-                  Pose: {item.poseFilePath}
-                </p>
-              )}
             </div>
           ))}
         </div>
@@ -163,7 +158,7 @@ export default function HistoryTab({
         </p>
       )}
       {authToken && !historyError && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-700/40 pt-3">
+        <div className="ui-divider-top mt-4 flex flex-wrap items-center justify-between gap-3 pt-3">
           <div className="text-xs text-slate-400">
             Page {historyTotalPages > 0 ? historyPage + 1 : 0} /{" "}
             {historyTotalPages || 0}

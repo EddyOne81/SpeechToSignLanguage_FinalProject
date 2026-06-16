@@ -1,6 +1,8 @@
 import React from "react";
 import {
   AlertCircle,
+  ArrowRight,
+  Clock,
   Loader2,
   Mic,
   PlayCircle,
@@ -8,8 +10,8 @@ import {
   UploadCloud,
 } from "lucide-react";
 import PoseViewer from "../PoseViewer";
-import { formatTime } from "../utils/format";
-import type { PoseBuffer, InputModeType, LangType } from "../types";
+import { formatDate, formatTime } from "../utils/format";
+import type { HistoryItem, PoseBuffer, InputModeType, LangType, TabType } from "../types";
 
 interface TranslateTabProps {
   inputMode: InputModeType;
@@ -31,6 +33,10 @@ interface TranslateTabProps {
   stopRecording: () => void;
   startTextTranslation: (overrideText?: string) => Promise<void>;
   startTranslation: () => Promise<void>;
+  authToken: string | null;
+  recentItems: HistoryItem[];
+  setActiveTab: (tab: TabType) => void;
+  replayHistory: (text?: string) => void;
 }
 
 export default function TranslateTab({
@@ -53,6 +59,10 @@ export default function TranslateTab({
   stopRecording,
   startTextTranslation,
   startTranslation,
+  authToken,
+  recentItems,
+  setActiveTab,
+  replayHistory,
 }: TranslateTabProps) {
   return (
     <div className="grid flex-1 grid-cols-1 gap-4 xl:grid-cols-12">
@@ -60,20 +70,20 @@ export default function TranslateTab({
         <div className="glass-panel flex flex-col rounded-3xl p-5">
           <h3 className="mb-4 text-sm font-semibold ">Input Source</h3>
 
-          <div className="mb-4 flex gap-2 rounded-full bg-slate-900/50 p-1 shadow-inner shadow-slate-950/30">
+          <div className="ui-segment mb-4 flex gap-2 rounded-full p-1">
             <button
               onClick={() => setInputMode("text")}
-              className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${inputMode === "text" ? "bg-violet-500/25 text-violet-100 shadow" : "text-slate-300 hover:text-slate-100"}`}>
+              className={`ui-segment-btn flex-1 rounded-full px-3 py-1.5 text-xs font-semibold ${inputMode === "text" ? "active" : ""}`}>
               Text
             </button>
             <button
               onClick={() => setInputMode("upload")}
-              className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${inputMode === "upload" ? "bg-violet-500/25 text-violet-100 shadow" : "text-slate-300 hover:text-slate-100"}`}>
+              className={`ui-segment-btn flex-1 rounded-full px-3 py-1.5 text-xs font-semibold ${inputMode === "upload" ? "active" : ""}`}>
               Upload
             </button>
             <button
               onClick={() => setInputMode("record")}
-              className={`flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${inputMode === "record" ? "bg-violet-500/25 text-violet-100 shadow" : "text-slate-300 hover:text-slate-100"}`}>
+              className={`ui-segment-btn flex-1 rounded-full px-3 py-1.5 text-xs font-semibold ${inputMode === "record" ? "active" : ""}`}>
               Record
             </button>
           </div>
@@ -85,15 +95,15 @@ export default function TranslateTab({
                   <p className="text-xs uppercase tracking-wide text-slate-500">
                     Quick Text Input
                   </p>
-                  <div className="flex gap-1 rounded-full bg-slate-900/60 p-0.5">
+                  <div className="ui-segment flex gap-1 rounded-full p-0.5">
                     <button
                       onClick={() => setInputLang("en")}
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all ${inputLang === "en" ? "bg-violet-500/30 text-violet-100 shadow" : "text-slate-400 hover:text-slate-200"}`}>
+                      className={`ui-segment-btn rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${inputLang === "en" ? "active" : ""}`}>
                       EN
                     </button>
                     <button
                       onClick={() => setInputLang("vi")}
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all ${inputLang === "vi" ? "bg-violet-500/30 text-violet-100 shadow" : "text-slate-400 hover:text-slate-200"}`}>
+                      className={`ui-segment-btn rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${inputLang === "vi" ? "active" : ""}`}>
                       VI
                     </button>
                   </div>
@@ -101,17 +111,13 @@ export default function TranslateTab({
                 <textarea
                   value={inputText}
                   onChange={(event) => setInputText(event.target.value)}
-                  placeholder={
-                    inputLang === "vi"
-                      ? "Nhập văn bản tiếng Việt. Ví dụ: Xin chào"
-                      : "Type English text. Example: Hello"
-                  }
+                  placeholder={inputLang === "vi" ? "Nhập văn bản tiếng Việt. Ví dụ: Xin chào" : "Type English text. Example: Hello"}
                   className="ui-input h-24 w-full rounded-lg px-3 py-2 text-sm"
                 />
                 <button
                   onClick={() => startTextTranslation()}
                   disabled={isProcessing || !inputText.trim()}
-                  className={`mt-3 flex w-full items-center justify-center rounded-lg py-2.5 font-medium text-white transition-all ${isProcessing || !inputText.trim() ? "cursor-not-allowed bg-slate-700/80 text-slate-400" : "ui-btn-primary"}`}>
+                  className={`mt-3 flex w-full items-center justify-center rounded-lg py-2.5 font-medium transition-all ${isProcessing || !inputText.trim() ? "ui-btn-disabled" : "ui-btn-primary"}`}>
                   {isProcessing ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -130,19 +136,20 @@ export default function TranslateTab({
             {inputMode === "upload" && (
               <div className="glass-inset rounded-xl p-3 shadow-sm">
                 <label
-                  className={`flex h-36 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 transition-all ${audioFile && !audioFile.name.includes("recorded_audio") ? "border-pink-400/55 bg-pink-400/12" : "border-dashed border-slate-500/35 hover:border-pink-400/55 hover:bg-slate-800/55"}`}>
+                  className={`flex h-36 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 transition-all ${audioFile && !audioFile.name.includes("recorded_audio") ? "ui-dropzone-active" : "ui-dropzone border-dashed"}`}>
                   <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
                     <UploadCloud
-                      className={`mb-2 h-7 w-7 ${audioFile && !audioFile.name.includes("recorded_audio") ? "text-orange-300" : "text-slate-400"}`}
+                      className={`mb-2 h-7 w-7 ${audioFile && !audioFile.name.includes("recorded_audio") ? "ui-text-accent" : "text-slate-400"}`}
                     />
-                    {audioFile && !audioFile.name.includes("recorded_audio") ? (
-                      <p className="max-w-full break-all text-sm font-medium text-orange-300">
+                    {audioFile &&
+                    !audioFile.name.includes("recorded_audio") ? (
+                      <p className="ui-text-accent max-w-full break-all text-sm font-medium">
                         {audioFile.name}
                       </p>
                     ) : (
                       <>
                         <p className="text-sm text-slate-400">
-                          <span className="font-semibold text-orange-300">
+                          <span className="ui-text-accent font-semibold">
                             Click to upload
                           </span>{" "}
                           or drag and drop
@@ -165,19 +172,20 @@ export default function TranslateTab({
 
             {inputMode === "record" && (
               <div
-                className={`glass-inset flex flex-col gap-4 rounded-xl border p-4 shadow-sm transition-all sm:flex-row sm:items-center sm:justify-between ${isRecording ? "border-rose-400/60 bg-rose-400/10" : audioFile && audioFile.name.includes("recorded_audio") ? "border-pink-400/55 bg-pink-400/12" : "border-slate-500/25"}`}>
+                className={`glass-inset flex flex-col gap-4 rounded-xl border p-4 shadow-sm transition-all sm:flex-row sm:items-center sm:justify-between ${isRecording ? "ui-state-recording" : audioFile && audioFile.name.includes("recorded_audio") ? "ui-state-ready" : ""}`}>
                 <div className="flex items-center gap-3">
                   <div
-                    className={`rounded-full p-2 ${isRecording ? "animate-pulse bg-rose-500/20 text-rose-500" : "bg-slate-800 text-slate-400"}`}>
+                    className={`rounded-full p-2 ${isRecording ? "animate-pulse bg-rose-500/20 text-rose-500" : "ui-icon-circle-neutral"}`}>
                     <Mic className="h-5 w-5" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-slate-200">
+                    <span className="text-sm font-medium" style={{ color: "var(--text-main)" }}>
                       {isRecording
-                        ? "Dang ghi am..."
-                        : audioFile && audioFile.name.includes("recorded_audio")
-                          ? "Da ghi am xong"
-                          : "Ghi am truc tiep"}
+                        ? "Recording..."
+                        : audioFile &&
+                            audioFile.name.includes("recorded_audio")
+                          ? "Recording ready"
+                          : "Record live audio"}
                     </span>
                     <span
                       className={`font-mono text-xs ${isRecording ? "text-rose-400" : "text-slate-500"}`}>
@@ -216,7 +224,7 @@ export default function TranslateTab({
               <button
                 onClick={startTranslation}
                 disabled={isProcessing || !audioFile || isRecording}
-                className={`flex w-full items-center justify-center rounded-xl py-3 font-medium text-white shadow-lg transition-all ${isProcessing || !audioFile || isRecording ? "cursor-not-allowed bg-slate-700/80 text-slate-400" : "bg-pink-700 shadow-pink-900/25 hover:bg-pink-600"}`}>
+                className={`flex w-full items-center justify-center rounded-xl py-3 font-medium shadow-lg transition-all ${isProcessing || !audioFile || isRecording ? "ui-btn-disabled" : "ui-btn-primary"}`}>
                 {isProcessing ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -232,28 +240,60 @@ export default function TranslateTab({
             </div>
           )}
         </div>
+
+        {/* Recent Translations */}
+        <div className="glass-panel rounded-3xl p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <Clock className="h-4 w-4" style={{ color: "var(--accent)" }} />
+              Recent Translations
+            </h3>
+            <button
+              onClick={() => setActiveTab("history")}
+              className="flex items-center gap-1 text-xs ui-text-accent transition-opacity hover:opacity-70">
+              View all
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+
+          {!authToken ? (
+            <p className="text-xs text-slate-500">Log in to see your recent translations.</p>
+          ) : recentItems.length === 0 ? (
+            <p className="text-xs text-slate-500">No translations yet. Start translating!</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {recentItems.map((item) => (
+                <button
+                  key={item.historyId}
+                  onClick={() => replayHistory(item.inputText)}
+                  className="glass-inset w-full rounded-xl px-3 py-2.5 text-left transition hover:opacity-80">
+                  <p className="truncate text-xs font-medium">{item.inputText || "Untitled"}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">{formatDate(item.createdAt)}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-col xl:col-span-8">
-        <div className="glass-panel output-panel relative flex h-[62vh] min-h-[420px] max-h-[680px] flex-1 flex-col overflow-hidden rounded-3xl">
-          <div className="output-header z-10 flex items-center justify-between border-b border-slate-500/25 bg-slate-900/30 p-4">
-            <h2 className="text-sm font-semibold text-violet-200">
+        <div className="glass-panel relative flex h-[62vh] min-h-[420px] max-h-[680px] flex-1 flex-col overflow-hidden rounded-3xl">
+          <div className="ui-panel-header z-10 flex items-center justify-between p-4">
+            <h2 className="ui-text-accent text-sm font-semibold">
               Output Rendering
             </h2>
           </div>
 
-          <div className="output-body flex min-h-0 flex-1 flex-col bg-gradient-to-b from-slate-900/35 to-slate-950/40 p-4 sm:p-6">
+          <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6">
             {isOfflineMode && (
               <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-2 text-xs text-amber-300">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>
-                  Offline mode: Sign-MT cloud unavailable. Translation was
-                  processed locally via Sockeye (FSW generated), but 3D
-                  animation requires cloud connectivity.
+                  Offline mode: Sign-MT cloud unavailable. Translation was processed locally via Sockeye (FSW generated), but 3D animation requires cloud connectivity.
                 </span>
               </div>
             )}
-            <div className="glass-inset output-stage relative flex min-h-[320px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/65 p-2">
+            <div className="glass-inset relative flex min-h-[320px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/65 p-2">
               {poseBuffer ? (
                 <PoseViewer buffer={poseBuffer} />
               ) : isOfflineMode ? (
@@ -267,13 +307,13 @@ export default function TranslateTab({
               )}
             </div>
 
-            <div className="output-caption mt-3 rounded-xl border border-white/14 bg-black/60 px-5 py-3 text-center text-base text-slate-100 backdrop-blur-sm">
+            <div className="glass-inset mt-3 rounded-xl px-5 py-3 text-center text-base">
               {transcript ? (
                 <span className="line-clamp-2 leading-relaxed tracking-[0.01em]">
                   {transcript}
                 </span>
               ) : (
-                <span className="text-slate-300">
+                <span className="text-slate-400">
                   Waiting for recognized text...
                 </span>
               )}

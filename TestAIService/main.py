@@ -24,6 +24,10 @@ SIGN_MT_POSE_API = "https://us-central1-sign-mt.cloudfunctions.net/spoken_text_t
 GOOGLE_TRANSLATE_API = "https://translate.googleapis.com/translate_a/single"
 BACKEND_PUBLIC_BASE_URL = os.getenv("BACKEND_PUBLIC_BASE_URL", "http://127.0.0.1:8000")
 
+MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "2000"))
+MAX_AUDIO_SIZE_MB = int(os.getenv("MAX_AUDIO_SIZE_MB", "25"))
+MAX_AUDIO_SIZE_BYTES = MAX_AUDIO_SIZE_MB * 1024 * 1024
+
 # Khởi tạo FastAPI
 app = FastAPI(
     title="S2S - Speech 2 Sign API Gateway",
@@ -31,10 +35,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Cấu hình CORS
+# Cấu hình CORS — chỉ cho phép Spring Boot backend gọi vào AI service
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:8080,http://localhost:8080")
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Trong môi trường Production, cần thay thế bằng domain cụ thể của Frontend
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -249,6 +256,8 @@ async def get_pose_file(text: str, spoken: str = "en", signed: str = "ase"):
     clean_text = text.strip()
     if not clean_text:
         raise HTTPException(status_code=400, detail="Text input cannot be empty.")
+    if len(clean_text) > MAX_TEXT_CHARS:
+        raise HTTPException(status_code=422, detail=f"Text input is too long. Maximum is {MAX_TEXT_CHARS} characters.")
 
     english_text = translate_to_english(clean_text, spoken)
     sign_mt_spoken = "en" if spoken != "en" else spoken
@@ -273,6 +282,8 @@ async def translate_text_to_sign(request: TextToSignRequest):
     text = request.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Text input cannot be empty.")
+    if len(text) > MAX_TEXT_CHARS:
+        raise HTTPException(status_code=422, detail=f"Text input is too long. Maximum is {MAX_TEXT_CHARS} characters.")
 
     try:
         logger.info("Processing direct text translation: %s", text)
@@ -302,6 +313,8 @@ async def translate_audio_to_sign(file: UploadFile = File(...)):
         # Bước 1: Lưu tệp tạm thời
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
             content = await file.read()
+            if len(content) > MAX_AUDIO_SIZE_BYTES:
+                raise HTTPException(status_code=413, detail=f"Audio file too large. Maximum size is {MAX_AUDIO_SIZE_MB}MB.")
             temp_file.write(content)
             temp_audio_path = temp_file.name
 

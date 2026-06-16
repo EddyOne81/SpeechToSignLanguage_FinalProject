@@ -225,13 +225,13 @@ export default function FeedbackTab({
                         onClick={() =>
                           void openHistoryFromFeedback(item.historyId)
                         }
-                        className="rounded-full border border-violet-300/40 bg-violet-300/12 px-3 py-1 text-[11px] uppercase text-violet-100 transition hover:border-violet-300/80">
+                        className="ui-pill-accent rounded-full px-3 py-1 text-[11px] uppercase transition">
                         View History
                       </button>
                     )}
                     <button
                       onClick={() => void deleteFeedback(item.feedbackId)}
-                      className="rounded-full border border-rose-300/35 bg-rose-300/12 px-3 py-1 text-[11px] uppercase text-rose-100 transition hover:border-rose-300/70">
+                      className="ui-pill-danger rounded-full px-3 py-1 text-[11px] uppercase transition">
                       Delete
                     </button>
                     {item.historyId && (
@@ -244,7 +244,7 @@ export default function FeedbackTab({
                             comment: item.comment ?? "",
                           }))
                         }
-                        className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] uppercase text-slate-200 transition hover:border-violet-300/45">
+                        className="ui-pill-neutral rounded-full px-3 py-1 text-[11px] uppercase transition">
                         Edit
                       </button>
                     )}
@@ -259,7 +259,7 @@ export default function FeedbackTab({
           )}
         </div>
         {authToken && !feedbackError && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-700/40 pt-3">
+          <div className="ui-divider-top mt-4 flex flex-wrap items-center justify-between gap-3 pt-3">
             <div className="text-xs text-slate-400">
               Page {feedbackTotalPages > 0 ? feedbackPage + 1 : 0} /{" "}
               {feedbackTotalPages || 0}

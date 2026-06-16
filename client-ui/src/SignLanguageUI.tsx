@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import AppHeader from "./components/AppHeader";
+import AppSidebar from "./components/AppSidebar";
 import AppFooter from "./components/AppFooter";
+import PageHeader from "./components/PageHeader";
 import TranslateTab from "./tabs/TranslateTab";
 import DictionaryTab from "./tabs/DictionaryTab";
 import HistoryTab from "./tabs/HistoryTab";
 import FeedbackTab from "./tabs/FeedbackTab";
 import AccountTab from "./tabs/AccountTab";
+import AdminTab from "./tabs/AdminTab";
 import {
   BACKEND_BASE_URL,
   extractErrorMessage,
@@ -27,12 +29,15 @@ import type {
 } from "./types";
 
 export default function SignLanguageUI() {
-  const [isHeaderCompact, setIsHeaderCompact] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     const stored = localStorage.getItem("s2s_theme");
     return stored === "light" ? "light" : "dark";
   });
   const [activeTab, setActiveTab] = useState<TabType>("translate");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem("s2s_sidebar_collapsed") === "true";
+  });
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const [authToken, setAuthToken] = useState<string | null>(() => {
     return localStorage.getItem("s2s_token");
@@ -121,20 +126,12 @@ export default function SignLanguageUI() {
   }, [theme]);
 
   useEffect(() => {
-    document.body.dataset.theme = theme;
-    return () => {
-      delete document.body.dataset.theme;
-    };
-  }, [theme]);
+    localStorage.setItem("s2s_sidebar_collapsed", String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
 
   useEffect(() => {
-    const onScroll = () => {
-      setIsHeaderCompact(window.scrollY > 18);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    setIsMobileSidebarOpen(false);
+  }, [activeTab]);
 
   useEffect(() => {
     return () => {
@@ -150,6 +147,7 @@ export default function SignLanguageUI() {
       return;
     }
     void loadProfile();
+    void loadHistories(0);
   }, [authToken]);
 
   useEffect(() => {
@@ -237,10 +235,7 @@ export default function SignLanguageUI() {
       offline_mode,
     } = data;
 
-    const offline =
-      offline_mode === true ||
-      (!pose_source_url &&
-        (!pose_coordinates || pose_coordinates.length === 0));
+    const offline = offline_mode === true || (!pose_source_url && (!pose_coordinates || pose_coordinates.length === 0));
     setIsOfflineMode(offline);
     setTranscript(recognized_text_en);
 
@@ -250,14 +245,10 @@ export default function SignLanguageUI() {
         fps,
         sourceUrl: pose_source_url,
       });
-      console.log(
-        `[System] Received ${pose_coordinates.length} JSON animation frames.`,
-      );
+      console.log(`[System] Received ${pose_coordinates.length} JSON animation frames.`);
     } else {
       setPoseBuffer(null);
-      console.warn(
-        "[System] Offline mode: Sign-MT cloud unavailable, animation not available.",
-      );
+      console.warn("[System] Offline mode: Sign-MT cloud unavailable, animation not available.");
     }
   };
 
@@ -344,10 +335,7 @@ export default function SignLanguageUI() {
     setAuthMessage("Logged out.");
   };
 
-  const loadDictionary = async (
-    targetPage = dictPage,
-    overrideQuery?: string,
-  ) => {
+  const loadDictionary = async (targetPage = dictPage, overrideQuery?: string) => {
     setDictLoading(true);
     setDictError(null);
     try {
@@ -359,10 +347,7 @@ export default function SignLanguageUI() {
       const content = pageData.content || [];
       const totalPages = Number(pageData.totalPages ?? 0);
       const totalElements = Number(
-        pageData.totalElements ??
-          pageData.numberOfElements ??
-          content.length ??
-          0,
+        pageData.totalElements ?? pageData.numberOfElements ?? content.length ?? 0,
       );
       const currentPage = Number(
         pageData.number ?? pageData.page ?? pageData.index ?? targetPage,
@@ -379,10 +364,7 @@ export default function SignLanguageUI() {
     }
   };
 
-  const loadHistories = async (
-    targetPage = historyPage,
-    overrideQuery?: string,
-  ) => {
+  const loadHistories = async (targetPage = historyPage, overrideQuery?: string) => {
     if (!authToken) {
       setHistoryItems([]);
       setHistoryTotalPages(0);
@@ -414,10 +396,7 @@ export default function SignLanguageUI() {
         const content = pageData.content || [];
         const totalPages = Number(pageData.totalPages ?? 0);
         const totalElements = Number(
-          pageData.totalElements ??
-            pageData.numberOfElements ??
-            content.length ??
-            0,
+          pageData.totalElements ?? pageData.numberOfElements ?? content.length ?? 0,
         );
         const currentPage = Number(
           pageData.number ?? pageData.page ?? pageData.index ?? targetPage,
@@ -449,9 +428,7 @@ export default function SignLanguageUI() {
     setFeedbackLoading(true);
     setFeedbackError(null);
     try {
-      const searchHistoryId = (
-        overrideHistoryId ?? feedbackHistoryIdSearch
-      ).trim();
+      const searchHistoryId = (overrideHistoryId ?? feedbackHistoryIdSearch).trim();
       const sort = overrideSort ?? feedbackSort;
       const sortQuery =
         sort === "latest"
@@ -472,10 +449,7 @@ export default function SignLanguageUI() {
       const content = pageData.content || [];
       const totalPages = Number(pageData.totalPages ?? 0);
       const totalElements = Number(
-        pageData.totalElements ??
-          pageData.numberOfElements ??
-          content.length ??
-          0,
+        pageData.totalElements ?? pageData.numberOfElements ?? content.length ?? 0,
       );
       const currentPage = Number(
         pageData.number ?? pageData.page ?? pageData.index ?? targetPage,
@@ -561,12 +535,7 @@ export default function SignLanguageUI() {
 
   const deleteAllHistories = async () => {
     if (!authToken) return;
-    if (
-      !window.confirm(
-        "Delete ALL your translation history? Associated feedbacks will also be removed. This cannot be undone.",
-      )
-    )
-      return;
+    if (!window.confirm("Delete ALL your translation history? Associated feedbacks will also be removed. This cannot be undone.")) return;
     setHistoryError(null);
     try {
       await apiRequest("/api/histories/me", { method: "DELETE" });
@@ -757,23 +726,24 @@ export default function SignLanguageUI() {
   return (
     <div
       className={`app-shell ${theme === "dark" ? "theme-dark" : "theme-light"} relative min-h-screen w-full overflow-x-hidden`}>
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-28 left-[8%] h-80 w-80 rounded-full bg-pink-400/8 blur-3xl" />
-        <div className="absolute top-[18%] -right-28 h-96 w-96 rounded-full bg-rose-400/8 blur-3xl" />
-      </div>
+      <div className={`relative z-10 flex w-full min-h-screen flex-col lg:flex-row${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>
+        <AppSidebar
+          theme={theme}
+          setTheme={setTheme}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          authUser={authUser}
+          handleLogout={handleLogout}
+          isCollapsed={isSidebarCollapsed}
+          setIsCollapsed={setIsSidebarCollapsed}
+          isMobileOpen={isMobileSidebarOpen}
+          setIsMobileOpen={setIsMobileSidebarOpen}
+        />
 
-      <AppHeader
-        isHeaderCompact={isHeaderCompact}
-        theme={theme}
-        setTheme={setTheme}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        authUser={authUser}
-        handleLogout={handleLogout}
-      />
+        <div className="app-content flex min-h-screen min-w-0 flex-1 flex-col">
+          <main className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-8">
+        <PageHeader activeTab={activeTab} />
 
-      <main
-        className={`app-main-offset ${isHeaderCompact ? "compact" : ""} relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 sm:px-6 sm:pb-6 lg:px-8`}>
         {activeTab === "translate" && (
           <TranslateTab
             inputMode={inputMode}
@@ -795,6 +765,10 @@ export default function SignLanguageUI() {
             stopRecording={stopRecording}
             startTextTranslation={startTextTranslation}
             startTranslation={startTranslation}
+            authToken={authToken}
+            recentItems={historyItems.slice(0, 3)}
+            setActiveTab={setActiveTab}
+            replayHistory={replayHistory}
           />
         )}
 
@@ -858,6 +832,13 @@ export default function SignLanguageUI() {
           />
         )}
 
+        {activeTab === "admin" && (
+          <AdminTab
+            authToken={authToken}
+            authUser={authUser}
+          />
+        )}
+
         {activeTab === "account" && (
           <AccountTab
             authToken={authToken}
@@ -888,7 +869,9 @@ export default function SignLanguageUI() {
         )}
       </main>
 
-      <AppFooter />
+          <AppFooter />
+        </div>
+      </div>
     </div>
   );
 }

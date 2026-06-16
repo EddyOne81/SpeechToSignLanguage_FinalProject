@@ -52,3 +52,9 @@ coverage/
 
 #Data
 data/
+
+# Thesis / documentation files (not source code)
+*.docx
+*.pptx
+*.xlsx
+diagram_*.svg

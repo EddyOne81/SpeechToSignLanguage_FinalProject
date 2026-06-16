@@ -45,7 +45,7 @@ export type UserProfile = {
   createdAt?: string;
 };
 
-export type TabType = "translate" | "dictionary" | "history" | "feedback" | "account";
+export type TabType = "translate" | "dictionary" | "history" | "feedback" | "account" | "admin";
 export type FeedbackSortType = "latest" | "oldest" | "rating_high" | "rating_low";
 export type InputModeType = "text" | "upload" | "record";
 export type LangType = "en" | "vi";

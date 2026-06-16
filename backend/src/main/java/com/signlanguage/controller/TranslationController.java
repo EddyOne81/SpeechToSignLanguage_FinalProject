@@ -5,6 +5,7 @@ import com.signlanguage.exception.ApiResponses;
 import com.signlanguage.service.TranslationGatewayService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -81,6 +82,7 @@ public class TranslationController {
     @Data
     public static class TranslateTextRequest {
         @NotBlank
+        @Size(max = 2000, message = "Text must not exceed 2000 characters")
         private String text;
 
         @JsonAlias("spoken_lang")

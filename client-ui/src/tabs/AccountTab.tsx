@@ -79,8 +79,8 @@ export default function AccountTab({
           {/* Login */}
           <div className="flex flex-col gap-5 glass-panel rounded-2xl p-6 shadow-lg xl:col-span-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-500/20">
-                <LogIn className="h-4 w-4 text-violet-300" />
+              <div className="ui-icon-circle h-9 w-9">
+                <LogIn className="h-4 w-4" />
               </div>
               <h3 className="text-sm font-semibold">Login</h3>
             </div>
@@ -118,8 +118,8 @@ export default function AccountTab({
           {/* Register */}
           <div className="flex flex-col gap-5 glass-panel rounded-2xl p-6 shadow-lg xl:col-span-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-500/20">
-                <UserCircle className="h-4 w-4 text-pink-300" />
+              <div className="ui-icon-circle h-9 w-9">
+                <UserCircle className="h-4 w-4" />
               </div>
               <h3 className="text-sm font-semibold">Create Account</h3>
             </div>
@@ -156,7 +156,7 @@ export default function AccountTab({
             </div>
             <button
               onClick={handleRegister}
-              className="flex items-center justify-center gap-2 rounded-lg border border-pink-300/40 bg-pink-300/12 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-pink-100 transition hover:border-pink-300/80">
+              className="ui-btn-secondary flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-wide transition">
               <UserCircle className="h-3.5 w-3.5" />
               Create Account
             </button>
@@ -179,17 +179,17 @@ export default function AccountTab({
 
             {/* Avatar + Name */}
             <div className="flex flex-col items-center gap-3 py-3">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-violet-900/30">
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold shadow-lg"
+                style={{ background: "var(--accent-strong)", color: "#fff" }}>
                 {(profile?.username ?? authUser?.username ?? "?")[0].toUpperCase()}
               </div>
               <div className="text-center">
-                <p className="text-base font-semibold text-slate-100">
+                <p className="text-base font-semibold" style={{ color: "var(--text-main)" }}>
                   {profile?.username ?? authUser?.username ?? "—"}
                 </p>
-                <span className={`mt-1.5 inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                  authUser?.role === "ROLE_ADMIN"
-                    ? "border-rose-400/40 bg-rose-400/15 text-rose-300"
-                    : "border-violet-400/40 bg-violet-400/15 text-violet-300"
+                <span className={`mt-1.5 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                  authUser?.role === "ROLE_ADMIN" ? "ui-pill-danger" : "ui-pill-accent"
                 }`}>
                   {authUser?.role === "ROLE_ADMIN" ? "Admin" : "Member"}
                 </span>
@@ -206,11 +206,11 @@ export default function AccountTab({
               <div className="space-y-2">
                 <div className="glass-inset flex items-center justify-between rounded-xl px-3 py-2.5 text-xs">
                   <span className="text-slate-400">Email</span>
-                  <span className="ml-4 max-w-[60%] truncate text-right font-medium text-slate-200">{profile.email ?? "—"}</span>
+                  <span className="ml-4 max-w-[60%] truncate text-right font-medium" style={{ color: "var(--text-main)" }}>{profile.email ?? "—"}</span>
                 </div>
                 <div className="glass-inset flex items-center justify-between rounded-xl px-3 py-2.5 text-xs">
                   <span className="text-slate-400">Joined</span>
-                  <span className="text-right font-medium text-slate-200">{formatDate(profile.createdAt)}</span>
+                  <span className="text-right font-medium" style={{ color: "var(--text-main)" }}>{formatDate(profile.createdAt)}</span>
                 </div>
               </div>
             ) : (
@@ -220,7 +220,7 @@ export default function AccountTab({
             {profileError && (
               <div className={`flex items-center rounded-lg p-2 text-xs ${
                 profileError === "Password updated."
-                  ? "border border-violet-400/30 bg-violet-400/12 text-violet-200"
+                  ? "ui-alert-info"
                   : "ui-alert-error"
               }`}>
                 <AlertCircle className="mr-2 h-4 w-4 shrink-0" />
@@ -228,10 +228,10 @@ export default function AccountTab({
               </div>
             )}
 
-            <div className="mt-auto border-t border-slate-700/40 pt-4">
+            <div className="ui-divider-top mt-auto pt-4">
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-rose-200 transition hover:border-rose-400/60 hover:bg-rose-400/20">
+                className="ui-pill-danger flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition">
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
               </button>
@@ -243,7 +243,7 @@ export default function AccountTab({
             {/* Update Email */}
             <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg">
               <h3 className="flex items-center gap-2 text-sm font-semibold">
-                <UserCircle className="h-4 w-4 text-violet-300" />
+                <UserCircle className="h-4 w-4" style={{ color: "var(--accent)" }} />
                 Update Email
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -267,7 +267,7 @@ export default function AccountTab({
             {/* Change Password */}
             <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg">
               <h3 className="flex items-center gap-2 text-sm font-semibold">
-                <KeyRound className="h-4 w-4 text-violet-300" />
+                <KeyRound className="h-4 w-4" style={{ color: "var(--accent)" }} />
                 Change Password
               </h3>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -284,7 +284,7 @@ export default function AccountTab({
                     <button
                       type="button"
                       onClick={() => setShowOldPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:opacity-100">
                       {showOldPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -302,7 +302,7 @@ export default function AccountTab({
                     <button
                       type="button"
                       onClick={() => setShowNewPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:opacity-100">
                       {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -323,7 +323,7 @@ export default function AccountTab({
 
       {authMessage && (
         <div className="xl:col-span-12">
-          <div className="flex items-center rounded-lg border border-violet-300/35 bg-violet-300/12 p-2 text-xs text-violet-100">
+          <div className="ui-alert-info flex items-center rounded-lg p-2 text-xs">
             <UserCircle className="mr-2 h-4 w-4" />
             {authMessage}
           </div>

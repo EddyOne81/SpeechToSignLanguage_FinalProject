@@ -118,23 +118,23 @@ export default function DictionaryTab({
                       setActiveTab("translate");
                       void startTextTranslation(item.englishText);
                     }}
-                    className="rounded-full border border-violet-300/40 bg-violet-300/12 px-3 py-1 text-[11px] uppercase text-violet-100 transition hover:border-violet-300/80">
+                    className="ui-pill-accent rounded-full px-3 py-1 text-[11px] uppercase transition">
                     Use
                   </button>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-400">
-                  <span className="rounded-full border border-slate-800 bg-slate-900 px-2 py-0.5">
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                  <span className="ui-tag rounded-full px-2 py-0.5">
                     {item.spokenLang ?? "en"}
                     {" -> "}
                     {item.signedLang ?? "ase"}
                   </span>
                   {item.poseFilePath && (
-                    <span className="rounded-full border border-violet-300/35 bg-violet-300/12 px-2 py-0.5 text-violet-100">
+                    <span className="ui-pill-accent rounded-full px-2 py-0.5">
                       pose cached
                     </span>
                   )}
                   {item.normalizedText && (
-                    <span className="rounded-full border border-slate-800 bg-slate-900 px-2 py-0.5">
+                    <span className="ui-tag rounded-full px-2 py-0.5">
                       normalized: {item.normalizedText}
                     </span>
                   )}
@@ -147,7 +147,7 @@ export default function DictionaryTab({
             </p>
           )}
         </div>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-700/40 pt-3">
+        <div className="ui-divider-top mt-4 flex flex-wrap items-center justify-between gap-3 pt-3">
           <div className="text-xs text-slate-400">
             Page {dictTotalPages > 0 ? dictPage + 1 : 0} /{" "}
             {dictTotalPages || 0}
