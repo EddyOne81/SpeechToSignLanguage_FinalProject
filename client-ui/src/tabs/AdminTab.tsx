@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Loader2,
   MessageSquare,
+  Plus,
   RefreshCw,
   ShieldCheck,
   Star,
@@ -142,6 +143,17 @@ export default function AdminTab({ authToken, authUser }: AdminTabProps) {
   const [dictLoading, setDictLoading] = useState(false);
   const [dictError, setDictError] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState({
+    englishText: "",
+    entryType: "GLOSS" as "GLOSS" | "PHRASE",
+    spokenLang: "en",
+    signedLang: "ase",
+    cacheSource: "MANUAL" as "SEED" | "AUTO_CACHED" | "MANUAL",
+    isVerified: false,
+  });
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   // Feedback
   const [feedbacks, setFeedbacks] = useState<AdminFeedback[]>([]);
@@ -239,6 +251,35 @@ export default function AdminTab({ authToken, authUser }: AdminTabProps) {
       setDictError("Failed to update entry.");
     } finally {
       setVerifyingId(null);
+    }
+  };
+
+  const createEntry = async () => {
+    if (!addForm.englishText.trim()) return;
+    setAddLoading(true);
+    setAddError(null);
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/dictionaries`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          englishText: addForm.englishText.trim(),
+          normalizedText: addForm.englishText.trim().toLowerCase(),
+          entryType: addForm.entryType,
+          spokenLang: addForm.spokenLang,
+          signedLang: addForm.signedLang,
+          cacheSource: addForm.cacheSource,
+          isVerified: addForm.isVerified,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setShowAddForm(false);
+      setAddForm({ englishText: "", entryType: "GLOSS", spokenLang: "en", signedLang: "ase", cacheSource: "MANUAL", isVerified: false });
+      await loadDictionary(0);
+    } catch {
+      setAddError("Failed to create entry. Check all fields.");
+    } finally {
+      setAddLoading(false);
     }
   };
 
@@ -565,13 +606,110 @@ export default function AdminTab({ authToken, authUser }: AdminTabProps) {
               Sign Dictionary{" "}
               <span className="ml-1 text-xs opacity-50">({dictTotal} entries)</span>
             </h3>
-            <button
-              onClick={() => loadDictionary(dictPage)}
-              className="ui-btn-secondary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs"
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Refresh
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowAddForm((v) => !v); setAddError(null); }}
+                className="ui-btn-secondary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Entry
+              </button>
+              <button
+                onClick={() => loadDictionary(dictPage)}
+                className="ui-btn-secondary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Refresh
+              </button>
+            </div>
           </div>
+
+          {showAddForm && (
+            <div className="glass-inset mb-4 rounded-xl p-4 space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-widest opacity-60">New Dictionary Entry</h4>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] opacity-50 uppercase tracking-widest">English Text *</label>
+                  <input
+                    type="text"
+                    value={addForm.englishText}
+                    onChange={(e) => setAddForm((f) => ({ ...f, englishText: e.target.value }))}
+                    placeholder="e.g. hello"
+                    className="ui-input mt-1 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] opacity-50 uppercase tracking-widest">Entry Type</label>
+                  <select
+                    value={addForm.entryType}
+                    onChange={(e) => setAddForm((f) => ({ ...f, entryType: e.target.value as "GLOSS" | "PHRASE" }))}
+                    className="ui-input mt-1 w-full"
+                  >
+                    <option value="GLOSS">GLOSS</option>
+                    <option value="PHRASE">PHRASE</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] opacity-50 uppercase tracking-widest">Cache Source</label>
+                  <select
+                    value={addForm.cacheSource}
+                    onChange={(e) => setAddForm((f) => ({ ...f, cacheSource: e.target.value as "SEED" | "AUTO_CACHED" | "MANUAL" }))}
+                    className="ui-input mt-1 w-full"
+                  >
+                    <option value="MANUAL">MANUAL</option>
+                    <option value="SEED">SEED</option>
+                    <option value="AUTO_CACHED">AUTO_CACHED</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] opacity-50 uppercase tracking-widest">Spoken Lang</label>
+                  <input
+                    type="text"
+                    value={addForm.spokenLang}
+                    onChange={(e) => setAddForm((f) => ({ ...f, spokenLang: e.target.value }))}
+                    className="ui-input mt-1 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] opacity-50 uppercase tracking-widest">Signed Lang</label>
+                  <input
+                    type="text"
+                    value={addForm.signedLang}
+                    onChange={(e) => setAddForm((f) => ({ ...f, signedLang: e.target.value }))}
+                    className="ui-input mt-1 w-full"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={addForm.isVerified}
+                  onChange={(e) => setAddForm((f) => ({ ...f, isVerified: e.target.checked }))}
+                  className="h-4 w-4 rounded"
+                />
+                <span className="text-xs">Mark as Verified</span>
+              </label>
+              {addError && (
+                <div className="ui-alert-error flex items-center gap-2 rounded-lg px-3 py-2 text-sm">
+                  <AlertCircle className="h-4 w-4 shrink-0" /> {addError}
+                </div>
+              )}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={createEntry}
+                  disabled={addLoading || !addForm.englishText.trim()}
+                  className="ui-btn-primary flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50"
+                >
+                  {addLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                  Create Entry
+                </button>
+                <button
+                  onClick={() => { setShowAddForm(false); setAddError(null); }}
+                  className="ui-btn-secondary flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           {dictError && (
             <div className="ui-alert-error mb-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm">
