@@ -1,0 +1,60 @@
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.ipynb_checkpoints/
+
+# Java / Maven
+**/target/
+
+# Node / Vite
+**/node_modules/
+**/dist/
+**/.vite/
+**/.cache/
+coverage/
+
+# IDE / Editor
+.idea/
+*.iml
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
+
+#Data
+data/
+
+# Thesis / documentation files (not source code)
+*.docx
+*.pptx
+*.xlsx
+diagram_*.svg

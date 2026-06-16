@@ -1,0 +1,362 @@
+{
+  "timestamp": "2026-05-12T22:10:14.690148",
+  "test_cases_count": 25,
+  "results": {
+    "reliability": [
+      {
+        "text": "Hello",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 1198.3,
+        "error": ""
+      },
+      {
+        "text": "Thank you",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 1718.4,
+        "error": ""
+      },
+      {
+        "text": "Good morning",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 1673.1,
+        "error": ""
+      },
+      {
+        "text": "How are you",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 2587.6,
+        "error": ""
+      },
+      {
+        "text": "My name is John",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 2900.8,
+        "error": ""
+      },
+      {
+        "text": "I love you",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 1608.8,
+        "error": ""
+      },
+      {
+        "text": "Please help me",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 2084.8,
+        "error": ""
+      },
+      {
+        "text": "I don't understand what you are saying",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 5683.5,
+        "error": ""
+      },
+      {
+        "text": "Can you please repeat that slowly",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 2941.4,
+        "error": ""
+      },
+      {
+        "text": "Where is the nearest hospital",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 9320.3,
+        "error": ""
+      },
+      {
+        "text": "What time does the meeting start",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 3380.6,
+        "error": ""
+      },
+      {
+        "text": "I need to go to the bathroom",
+        "lang": "en",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 10168.0,
+        "error": ""
+      },
+      {
+        "text": "Xin chào",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 1851.8,
+        "error": ""
+      },
+      {
+        "text": "Cảm ơn bạn",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 1955.1,
+        "error": ""
+      },
+      {
+        "text": "Tôi yêu bạn",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 1983.7,
+        "error": ""
+      },
+      {
+        "text": "Chúc mừng sinh nhật",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 2277.5,
+        "error": ""
+      },
+      {
+        "text": "Bạn khỏe không",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 3065.5,
+        "error": ""
+      },
+      {
+        "text": "Rất vui được gặp bạn",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 2342.1,
+        "error": ""
+      },
+      {
+        "text": "Xin lỗi",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 1759.5,
+        "error": ""
+      },
+      {
+        "text": "Tạm biệt",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 2568.2,
+        "error": ""
+      },
+      {
+        "text": "Tôi không hiểu bạn đang nói gì",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 5926.2,
+        "error": ""
+      },
+      {
+        "text": "Bạn có thể nói chậm lại được không",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 4857.3,
+        "error": ""
+      },
+      {
+        "text": "Bệnh viện gần nhất ở đâu",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 4704.4,
+        "error": ""
+      },
+      {
+        "text": "Cuộc họp bắt đầu lúc mấy giờ",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 4697.9,
+        "error": ""
+      },
+      {
+        "text": "Tôi cần đi vệ sinh",
+        "lang": "vi",
+        "success": true,
+        "offline_mode": false,
+        "latency_ms": 3300.3,
+        "error": ""
+      }
+    ],
+    "vi_en_translation": [
+      {
+        "input_vi": "Xin chào",
+        "translated": "Hello",
+        "expected_en": "Hello",
+        "bleu1": 1.0
+      },
+      {
+        "input_vi": "Cảm ơn bạn",
+        "translated": "Thank you",
+        "expected_en": "Thank you",
+        "bleu1": 1.0
+      },
+      {
+        "input_vi": "Tôi yêu bạn",
+        "translated": "I love you",
+        "expected_en": "I love you",
+        "bleu1": 1.0
+      },
+      {
+        "input_vi": "Chúc mừng sinh nhật",
+        "translated": "Happy birthday",
+        "expected_en": "Happy birthday",
+        "bleu1": 1.0
+      },
+      {
+        "input_vi": "Bạn khỏe không",
+        "translated": "How are you",
+        "expected_en": "How are you",
+        "bleu1": 1.0
+      },
+      {
+        "input_vi": "Rất vui được gặp bạn",
+        "translated": "Nice to meet you",
+        "expected_en": "Nice to meet you",
+        "bleu1": 1.0
+      },
+      {
+        "input_vi": "Xin lỗi",
+        "translated": "Sorry",
+        "expected_en": "Sorry",
+        "bleu1": 1.0
+      },
+      {
+        "input_vi": "Tạm biệt",
+        "translated": "Goodbye",
+        "expected_en": "Goodbye",
+        "bleu1": 1.0
+      },
+      {
+        "input_vi": "Tôi không hiểu bạn đang nói gì",
+        "translated": "I don't know what you're talking about",
+        "expected_en": "I don't understand what you are saying",
+        "bleu1": 0.429
+      },
+      {
+        "input_vi": "Bạn có thể nói chậm lại được không",
+        "translated": "Can you speak slower?",
+        "expected_en": "Can you speak more slowly",
+        "bleu1": 0.75
+      },
+      {
+        "input_vi": "Bệnh viện gần nhất ở đâu",
+        "translated": "Where is the nearest hospital?",
+        "expected_en": "Where is the nearest hospital",
+        "bleu1": 0.8
+      },
+      {
+        "input_vi": "Cuộc họp bắt đầu lúc mấy giờ",
+        "translated": "What time does the meeting start?",
+        "expected_en": "What time does the meeting start",
+        "bleu1": 0.833
+      },
+      {
+        "input_vi": "Tôi cần đi vệ sinh",
+        "translated": "I need to go to the bathroom",
+        "expected_en": "I need to go to the bathroom",
+        "bleu1": 1.0
+      }
+    ],
+    "fsw_quality": [
+      {
+        "text": "Hello",
+        "fsw": "M500x500S14c20489x524S27106515x543S30a00482x482S33e00482x482",
+        "valid_fsw": true,
+        "latency_ms": 2442.7
+      },
+      {
+        "text": "Thank you",
+        "fsw": "M500x500S26f00512x521S2ff00482x482S33e00482x482S30a00482x482S15a00494x508",
+        "valid_fsw": true,
+        "latency_ms": 217.1
+      },
+      {
+        "text": "Good morning",
+        "fsw": "M500x500S2ff00482x483S15a00494x513S22a04494x537S15a36494x560S15a32498x560S37806497x560S37806497x560",
+        "valid_fsw": true,
+        "latency_ms": 188.6
+      },
+      {
+        "text": "How are you",
+        "fsw": "M500x500S18019473x556S20500495x578S2c300504x528S18011502x556S2c311471x528S30a00482x488S30300482x477S10040487x623S26500493x570",
+        "valid_fsw": true,
+        "latency_ms": 274.3
+      },
+      {
+        "text": "My name is John",
+        "fsw": "M500x500S15a01491x487S20500487x503 M500x500S11541498x491S11549479x498S20600489x476 M500x500S19220492x478S2a20c476x462S17620492x502S11502477x523S11920486x543 M500x500S19220492x478S2a20c476x462S17620492x502S11502477x523S11920486x543",
+        "valid_fsw": true,
+        "latency_ms": 356.3
+      },
+      {
+        "text": "I love you",
+        "fsw": "M500x500S19c20486x485S27106480x480",
+        "valid_fsw": true,
+        "latency_ms": 70.3
+      },
+      {
+        "text": "Please help me",
+        "fsw": "M500x500S15a07487x496S21100490x480",
+        "valid_fsw": true,
+        "latency_ms": 77.4
+      },
+      {
+        "text": "I don't understand what you are saying",
+        "fsw": "M500x500S30a00482x482S10000519x474S21b00527x458",
+        "valid_fsw": true,
+        "latency_ms": 99.4
+      },
+      {
+        "text": "Can you please repeat that slowly",
+        "fsw": "M500x500S14c00488x457S18536488x516S22f00493x495S18148480x498",
+        "valid_fsw": true,
+        "latency_ms": 488.0
+      },
+      {
+        "text": "Where is the nearest hospital",
+        "fsw": "M500x500S2ff00482x483S10001518x490S10009462x490S10001518x490S10009462x490S10001518x490S10009464x490S10001518x490S10009464x490S10001518x490S10009471x490S10001503x490S10009471x490S10001503x490S10009471x490S10001503x490S10009471x490S10001503x490S10009471x490S10001503x490S10009471x490S10001503x490S10009471x490S10001559x490",
+        "valid_fsw": true,
+        "latency_ms": 366.5
+      },
+      {
+        "text": "What time does the meeting start",
+        "fsw": "M500x500S10020496x498S10028475x498S2890a502x473S28912471x474",
+        "valid_fsw": true,
+        "latency_ms": 108.5
+      },
+      {
+        "text": "I need to go to the bathroom",
+        "fsw": "M500x500S10611489x476S22a04490x510",
+        "valid_fsw": true,
+        "latency_ms": 92.5
+      }
+    ]
+  }
+}
