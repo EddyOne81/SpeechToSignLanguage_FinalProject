@@ -51,7 +51,6 @@ public class TranslationHistoryService {
 				.user(user)
 				.word(resolveWord(wordId))
 				.inputText(inputText)
-				.fswResult(fswResult)
 				.poseFilePath(poseFilePath)
 				.processingTimeMs(processingTimeMs)
 				.build();
@@ -71,9 +70,6 @@ public class TranslationHistoryService {
 		}
 		if (inputText != null) {
 			history.setInputText(inputText);
-		}
-		if (fswResult != null) {
-			history.setFswResult(fswResult);
 		}
 		if (poseFilePath != null) {
 			history.setPoseFilePath(poseFilePath);
@@ -128,7 +124,6 @@ public class TranslationHistoryService {
 				.user(user)
 				.word(resolveWord(wordId))
 				.inputText(inputText)
-				.fswResult(fswResult)
 				.poseFilePath(poseFilePath)
 				.processingTimeMs(processingTimeMs)
 				.build();
@@ -150,7 +145,6 @@ public class TranslationHistoryService {
 		result.put("userId", history.getUser() == null ? null : history.getUser().getUserId());
 		result.put("wordId", history.getWord() == null ? null : history.getWord().getWordId());
 		result.put("inputText", history.getInputText() == null ? "" : history.getInputText());
-		result.put("fswResult", history.getFswResult() == null ? "" : history.getFswResult());
 		result.put("poseFilePath", history.getPoseFilePath() == null ? "" : history.getPoseFilePath());
 		result.put("processingTimeMs", history.getProcessingTimeMs() == null ? 0 : history.getProcessingTimeMs());
 		result.put("createdAt", history.getCreatedAt());
