@@ -5,7 +5,7 @@ from groq import Groq
 
 logger = logging.getLogger(__name__)
 
-GROQ_MODEL = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3-turbo")
+GROQ_MODEL = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3")
 
 
 class ASRService:
