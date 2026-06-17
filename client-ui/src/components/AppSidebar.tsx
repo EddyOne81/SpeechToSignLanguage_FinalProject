@@ -10,7 +10,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PlayCircle,
-  ShieldCheck,
   Sun,
   UserCircle,
   X,
@@ -50,10 +49,7 @@ export default function AppSidebar({
   isMobileOpen,
   setIsMobileOpen,
 }: AppSidebarProps) {
-  const navItems =
-    authUser?.role === "ROLE_ADMIN"
-      ? [...NAV_ITEMS, { tab: "admin" as TabType, label: "Admin", icon: ShieldCheck }]
-      : NAV_ITEMS;
+  const navItems = NAV_ITEMS;
 
   const handleNavClick = (tab: TabType) => {
     setActiveTab(tab);

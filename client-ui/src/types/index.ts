@@ -43,9 +43,10 @@ export type UserProfile = {
   email?: string;
   roles?: string[] | string;
   createdAt?: string;
+  emailVerified?: boolean;
 };
 
-export type TabType = "translate" | "dictionary" | "history" | "feedback" | "account" | "admin";
+export type TabType = "translate" | "dictionary" | "history" | "feedback" | "account";
 export type FeedbackSortType = "latest" | "oldest" | "rating_high" | "rating_low";
 export type InputModeType = "text" | "upload" | "record";
 export type LangType = "en" | "vi";

@@ -11,5 +11,34 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq) => {
+            proxyReq.removeHeader("origin");
+          });
+        },
+      },
+      "/oauth2": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq) => {
+            proxyReq.removeHeader("origin");
+          });
+        },
+      },
+      "/login/oauth2": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq) => {
+            proxyReq.removeHeader("origin");
+          });
+        },
+      },
+    },
   },
 })

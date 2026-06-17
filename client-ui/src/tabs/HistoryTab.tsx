@@ -4,7 +4,7 @@ import { formatDate } from "../utils/format";
 import type { FeedbackFormData, HistoryItem, TabType } from "../types";
 
 interface HistoryTabProps {
-  authToken: string | null;
+  isLoggedIn: boolean;
   historyItems: HistoryItem[];
   historyQuery: string;
   setHistoryQuery: (q: string) => void;
@@ -22,7 +22,7 @@ interface HistoryTabProps {
 }
 
 export default function HistoryTab({
-  authToken,
+  isLoggedIn,
   historyItems,
   historyQuery,
   setHistoryQuery,
@@ -75,7 +75,7 @@ export default function HistoryTab({
               <RefreshCw className="h-3.5 w-3.5" />
               Refresh
             </button>
-            {authToken && historyTotalElements > 0 && (
+            {isLoggedIn && historyTotalElements > 0 && (
               <button
                 onClick={() => void deleteAllHistories()}
                 className="ui-pill-danger flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] uppercase transition">
@@ -90,7 +90,7 @@ export default function HistoryTab({
         </div>
       </div>
 
-      {!authToken ? (
+      {!isLoggedIn ? (
         <div className="mt-6 glass-inset rounded-xl p-4 text-sm text-slate-500">
           Login to view your personal translation history.
         </div>
@@ -157,7 +157,7 @@ export default function HistoryTab({
             : "No history entries yet."}
         </p>
       )}
-      {authToken && !historyError && (
+      {isLoggedIn && !historyError && (
         <div className="ui-divider-top mt-4 flex flex-wrap items-center justify-between gap-3 pt-3">
           <div className="text-xs text-slate-400">
             Page {historyTotalPages > 0 ? historyPage + 1 : 0} /{" "}

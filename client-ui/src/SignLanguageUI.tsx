@@ -7,7 +7,6 @@ import DictionaryTab from "./tabs/DictionaryTab";
 import HistoryTab from "./tabs/HistoryTab";
 import FeedbackTab from "./tabs/FeedbackTab";
 import AccountTab from "./tabs/AccountTab";
-import AdminTab from "./tabs/AdminTab";
 import {
   BACKEND_BASE_URL,
   extractErrorMessage,
@@ -28,7 +27,21 @@ import type {
   UserProfile,
 } from "./types";
 
-export default function SignLanguageUI() {
+interface SignLanguageUIProps {
+  onAuthChange?: (user: { username?: string; role?: string } | null) => void;
+  onLogout?: () => void;
+  isAdminMode?: boolean;
+  onBackToDashboard?: () => void;
+  initialAuthUser?: { username?: string; role?: string } | null;
+}
+
+export default function SignLanguageUI({
+  onAuthChange,
+  onLogout,
+  isAdminMode = false,
+  onBackToDashboard,
+  initialAuthUser = null,
+}: SignLanguageUIProps = {}) {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     const stored = localStorage.getItem("s2s_theme");
     return stored === "light" ? "light" : "dark";
@@ -39,16 +52,10 @@ export default function SignLanguageUI() {
   });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const [authToken, setAuthToken] = useState<string | null>(() => {
-    return localStorage.getItem("s2s_token");
-  });
   const [authUser, setAuthUser] = useState<{
     username?: string;
     role?: string;
-  } | null>(() => {
-    const stored = localStorage.getItem("s2s_user");
-    return stored ? JSON.parse(stored) : null;
-  });
+  } | null>(initialAuthUser);
 
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -142,13 +149,13 @@ export default function SignLanguageUI() {
   }, []);
 
   useEffect(() => {
-    if (!authToken) {
+    if (!authUser) {
       setProfile(null);
       return;
     }
     void loadProfile();
     void loadHistories(0);
-  }, [authToken]);
+  }, [authUser?.username]);
 
   useEffect(() => {
     if (activeTab === "dictionary") {
@@ -240,10 +247,22 @@ export default function SignLanguageUI() {
     setTranscript(recognized_text_en);
 
     if (!offline) {
+      // Strip the absolute origin so the pose-viewer web component fetches through
+      // the Vite proxy instead of going directly to http://127.0.0.1:8080, which
+      // would be blocked by CORS (the web component bypasses our fetch wrapper).
+      const poseUrl = (() => {
+        if (!pose_source_url) return pose_source_url;
+        try {
+          const { pathname, search } = new URL(pose_source_url);
+          return pathname + search;
+        } catch {
+          return pose_source_url;
+        }
+      })();
       setPoseBuffer({
         frames: pose_coordinates,
         fps,
-        sourceUrl: pose_source_url,
+        sourceUrl: poseUrl,
       });
       console.log(`[System] Received ${pose_coordinates.length} JSON animation frames.`);
     } else {
@@ -254,9 +273,6 @@ export default function SignLanguageUI() {
 
   const apiRequest = async (path: string, options: RequestInit = {}) => {
     const headers = new Headers(options.headers || {});
-    if (authToken) {
-      headers.set("Authorization", `Bearer ${authToken}`);
-    }
     if (
       !headers.has("Content-Type") &&
       options.body &&
@@ -264,10 +280,14 @@ export default function SignLanguageUI() {
     ) {
       headers.set("Content-Type", "application/json");
     }
+    if (!headers.has("Accept")) {
+      headers.set("Accept", "application/json");
+    }
 
     const response = await fetch(`${BACKEND_BASE_URL}${path}`, {
       ...options,
       headers,
+      credentials: "include",
     });
 
     const body = await response.json().catch(() => null);
@@ -285,16 +305,12 @@ export default function SignLanguageUI() {
         body: JSON.stringify(loginForm),
       });
       const payload = unwrapApiResponse(response);
-      if (!payload?.token) {
-        throw new Error("Login response missing token.");
+      if (!payload?.username) {
+        throw new Error("Login response missing user info.");
       }
-      localStorage.setItem("s2s_token", payload.token);
-      localStorage.setItem(
-        "s2s_user",
-        JSON.stringify({ username: payload.username, role: payload.role }),
-      );
-      setAuthToken(payload.token);
-      setAuthUser({ username: payload.username, role: payload.role });
+      const user = { username: payload.username, role: payload.role };
+      setAuthUser(user);
+      onAuthChange?.(user);
       setAuthMessage("Login success.");
       setLoginForm({ username: "", password: "" });
     } catch (err: any) {
@@ -310,17 +326,13 @@ export default function SignLanguageUI() {
         body: JSON.stringify(registerForm),
       });
       const payload = unwrapApiResponse(response);
-      if (!payload?.token) {
-        throw new Error("Register response missing token.");
+      if (!payload?.username) {
+        throw new Error("Register response missing user info.");
       }
-      localStorage.setItem("s2s_token", payload.token);
-      localStorage.setItem(
-        "s2s_user",
-        JSON.stringify({ username: payload.username, role: payload.role }),
-      );
-      setAuthToken(payload.token);
-      setAuthUser({ username: payload.username, role: payload.role });
-      setAuthMessage("Register success.");
+      const user = { username: payload.username, role: payload.role };
+      setAuthUser(user);
+      onAuthChange?.(user);
+      setAuthMessage(payload.emailVerified ? "Account created!" : "Account created! Check your email to verify.");
       setRegisterForm({ username: "", email: "", password: "" });
     } catch (err: any) {
       setAuthMessage(err.message || "Register failed.");
@@ -328,11 +340,10 @@ export default function SignLanguageUI() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("s2s_token");
-    localStorage.removeItem("s2s_user");
-    setAuthToken(null);
     setAuthUser(null);
+    onAuthChange?.(null);
     setAuthMessage("Logged out.");
+    onLogout?.();
   };
 
   const loadDictionary = async (targetPage = dictPage, overrideQuery?: string) => {
@@ -365,7 +376,7 @@ export default function SignLanguageUI() {
   };
 
   const loadHistories = async (targetPage = historyPage, overrideQuery?: string) => {
-    if (!authToken) {
+    if (!authUser) {
       setHistoryItems([]);
       setHistoryTotalPages(0);
       setHistoryTotalElements(0);
@@ -419,7 +430,7 @@ export default function SignLanguageUI() {
     overrideHistoryId?: string,
     overrideSort?: FeedbackSortType,
   ) => {
-    if (!authToken) {
+    if (!authUser) {
       setFeedbackItems([]);
       setFeedbackTotalPages(0);
       setFeedbackTotalElements(0);
@@ -467,7 +478,7 @@ export default function SignLanguageUI() {
   };
 
   const submitFeedback = async () => {
-    if (!authToken) {
+    if (!authUser) {
       setFeedbackError("Login required.");
       return;
     }
@@ -519,7 +530,7 @@ export default function SignLanguageUI() {
   };
 
   const deleteHistory = async (historyId: number) => {
-    if (!authToken) return;
+    if (!authUser) return;
     setHistoryError(null);
     try {
       await apiRequest(`/api/histories/me/${historyId}`, { method: "DELETE" });
@@ -534,7 +545,7 @@ export default function SignLanguageUI() {
   };
 
   const deleteAllHistories = async () => {
-    if (!authToken) return;
+    if (!authUser) return;
     if (!window.confirm("Delete ALL your translation history? Associated feedbacks will also be removed. This cannot be undone.")) return;
     setHistoryError(null);
     try {
@@ -547,7 +558,7 @@ export default function SignLanguageUI() {
   };
 
   const deleteFeedback = async (feedbackId: number) => {
-    if (!authToken) {
+    if (!authUser) {
       setFeedbackError("Login required.");
       return;
     }
@@ -567,7 +578,7 @@ export default function SignLanguageUI() {
   };
 
   const openHistoryFromFeedback = async (historyId?: number | null) => {
-    if (!historyId || !authToken) {
+    if (!historyId || !authUser) {
       return;
     }
     try {
@@ -587,7 +598,7 @@ export default function SignLanguageUI() {
   };
 
   const loadProfile = async () => {
-    if (!authToken) {
+    if (!authUser) {
       return;
     }
     setProfileLoading(true);
@@ -605,7 +616,7 @@ export default function SignLanguageUI() {
   };
 
   const updateProfile = async () => {
-    if (!authToken) {
+    if (!authUser) {
       setProfileError("Login required.");
       return;
     }
@@ -623,7 +634,7 @@ export default function SignLanguageUI() {
   };
 
   const updatePassword = async () => {
-    if (!authToken) {
+    if (!authUser) {
       setProfileError("Login required.");
       return;
     }
@@ -743,6 +754,17 @@ export default function SignLanguageUI() {
         />
 
         <div className="app-content flex min-h-screen min-w-0 flex-1 flex-col">
+          {isAdminMode && (
+            <div className="flex items-center justify-between gap-3 bg-indigo-600 px-4 py-2 text-sm text-white">
+              <span className="font-medium">Viewing as user (Admin mode)</span>
+              <button
+                onClick={onBackToDashboard}
+                className="flex items-center gap-1.5 rounded-md bg-white/20 px-3 py-1 text-xs font-semibold transition-colors hover:bg-white/30"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+          )}
           <main className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-8">
         <PageHeader activeTab={activeTab} />
 
@@ -767,7 +789,7 @@ export default function SignLanguageUI() {
             stopRecording={stopRecording}
             startTextTranslation={startTextTranslation}
             startTranslation={startTranslation}
-            authToken={authToken}
+            isLoggedIn={!!authUser}
             recentItems={historyItems.slice(0, 3)}
             setActiveTab={setActiveTab}
             replayHistory={replayHistory}
@@ -793,7 +815,7 @@ export default function SignLanguageUI() {
 
         {activeTab === "history" && (
           <HistoryTab
-            authToken={authToken}
+            isLoggedIn={!!authUser}
             historyItems={historyItems}
             historyQuery={historyQuery}
             setHistoryQuery={setHistoryQuery}
@@ -813,7 +835,7 @@ export default function SignLanguageUI() {
 
         {activeTab === "feedback" && (
           <FeedbackTab
-            authToken={authToken}
+            isLoggedIn={!!authUser}
             feedbackItems={feedbackItems}
             feedbackPage={feedbackPage}
             feedbackTotalPages={feedbackTotalPages}
@@ -834,16 +856,9 @@ export default function SignLanguageUI() {
           />
         )}
 
-        {activeTab === "admin" && (
-          <AdminTab
-            authToken={authToken}
-            authUser={authUser}
-          />
-        )}
-
         {activeTab === "account" && (
           <AccountTab
-            authToken={authToken}
+            isLoggedIn={!!authUser}
             authUser={authUser}
             authMessage={authMessage}
             profile={profile}

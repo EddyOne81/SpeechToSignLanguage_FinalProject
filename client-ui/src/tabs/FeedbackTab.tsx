@@ -8,7 +8,7 @@ import type {
 } from "../types";
 
 interface FeedbackTabProps {
-  authToken: string | null;
+  isLoggedIn: boolean;
   feedbackItems: FeedbackItem[];
   feedbackPage: number;
   feedbackTotalPages: number;
@@ -33,7 +33,7 @@ interface FeedbackTabProps {
 }
 
 export default function FeedbackTab({
-  authToken,
+  isLoggedIn,
   feedbackItems,
   feedbackPage,
   feedbackTotalPages,
@@ -61,7 +61,7 @@ export default function FeedbackTab({
         <p className="text-xs text-slate-500">
           Link your feedback to a history item to improve traceability.
         </p>
-        {!authToken ? (
+        {!isLoggedIn ? (
           <div className="glass-inset rounded-xl p-4 text-sm text-slate-500">
             Login to submit feedback.
           </div>
@@ -186,7 +186,7 @@ export default function FeedbackTab({
           {feedbackTotalElements} total
         </div>
         <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
-          {!authToken ? (
+          {!isLoggedIn ? (
             <p className="text-sm text-slate-500">
               Login to view your feedbacks.
             </p>
@@ -258,7 +258,7 @@ export default function FeedbackTab({
             </p>
           )}
         </div>
-        {authToken && !feedbackError && (
+        {isLoggedIn && !feedbackError && (
           <div className="ui-divider-top mt-4 flex flex-wrap items-center justify-between gap-3 pt-3">
             <div className="text-xs text-slate-400">
               Page {feedbackTotalPages > 0 ? feedbackPage + 1 : 0} /{" "}

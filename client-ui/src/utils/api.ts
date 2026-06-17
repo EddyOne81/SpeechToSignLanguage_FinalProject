@@ -1,5 +1,5 @@
 export const BACKEND_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL ?? "http://127.0.0.1:8080";
+  import.meta.env.VITE_BACKEND_URL ?? "";
 
 export const unwrapApiResponse = (body: any) => {
   if (body?.data?.data !== undefined) {

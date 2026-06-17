@@ -33,7 +33,7 @@ interface TranslateTabProps {
   stopRecording: () => void;
   startTextTranslation: (overrideText?: string) => Promise<void>;
   startTranslation: () => Promise<void>;
-  authToken: string | null;
+  isLoggedIn: boolean;
   recentItems: HistoryItem[];
   setActiveTab: (tab: TabType) => void;
   replayHistory: (text?: string) => void;
@@ -59,7 +59,7 @@ export default function TranslateTab({
   stopRecording,
   startTextTranslation,
   startTranslation,
-  authToken,
+  isLoggedIn,
   recentItems,
   setActiveTab,
   replayHistory,
@@ -256,7 +256,7 @@ export default function TranslateTab({
             </button>
           </div>
 
-          {!authToken ? (
+          {!isLoggedIn ? (
             <p className="text-xs text-slate-500">Log in to see your recent translations.</p>
           ) : recentItems.length === 0 ? (
             <p className="text-xs text-slate-500">No translations yet. Start translating!</p>
