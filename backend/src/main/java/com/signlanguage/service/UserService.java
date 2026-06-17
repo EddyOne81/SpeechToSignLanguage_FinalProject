@@ -152,12 +152,13 @@ public class UserService {
     }
 
     private Map<String, Object> toUserResponse(UserSignLanguage user) {
-        return Map.of(
-                "userId", user.getUserId(),
-                "username", user.getUsername(),
-                "email", user.getEmail() == null ? "" : user.getEmail(),
-                "roles", user.getRoles().stream().map(Role::getCode).collect(Collectors.toSet()),
-                "createdAt", user.getCreatedAt()
-        );
+        Map<String, Object> map = new java.util.LinkedHashMap<>();
+        map.put("userId", user.getUserId());
+        map.put("username", user.getUsername());
+        map.put("email", user.getEmail() == null ? "" : user.getEmail());
+        map.put("emailVerified", user.isEmailVerified());
+        map.put("roles", user.getRoles().stream().map(Role::getCode).collect(Collectors.toSet()));
+        map.put("createdAt", user.getCreatedAt());
+        return map;
     }
 }
