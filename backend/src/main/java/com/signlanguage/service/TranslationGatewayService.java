@@ -95,14 +95,21 @@ public class TranslationGatewayService {
         requestBody.put("spoken_lang", normalizedSpoken);
         requestBody.put("signed_lang", normalizedSigned);
 
-        Map<String, Object> aiResponse = aiWebClient.post()
-                .uri("/api/v1/translate/text")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(requestBody)
-                .retrieve()
-            .bodyToMono(MAP_TYPE)
-                .blockOptional()
-                .orElseThrow(() -> new RuntimeException("Empty response from AI service"));
+        Map<String, Object> aiResponse;
+        try {
+            aiResponse = aiWebClient.post()
+                    .uri("/api/v1/translate/text")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(MAP_TYPE)
+                    .blockOptional()
+                    .orElseThrow(() -> new RuntimeException("Empty response from AI service"));
+        } catch (RuntimeException ex) {
+            throw new RuntimeException("AI service unavailable: " + ex.getMessage(), ex);
+        } catch (Throwable ex) {
+            throw new RuntimeException("AI service unavailable", ex);
+        }
 
         Map<String, Object> payload = extractPayload(aiResponse);
         patchPoseSourceUrl(payload, cleanText, normalizedSpoken, normalizedSigned);
@@ -140,14 +147,21 @@ public class TranslationGatewayService {
             MultiValueMap<String, Object> multipartBody = new LinkedMultiValueMap<>();
             multipartBody.add("file", fileResource);
 
-            Map<String, Object> aiResponse = aiWebClient.post()
-                    .uri("/api/v1/translate/audio")
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(BodyInserters.fromMultipartData(multipartBody))
-                    .retrieve()
-                    .bodyToMono(MAP_TYPE)
-                    .blockOptional()
-                    .orElseThrow(() -> new RuntimeException("Empty response from AI service"));
+            Map<String, Object> aiResponse;
+            try {
+                aiResponse = aiWebClient.post()
+                        .uri("/api/v1/translate/audio")
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .body(BodyInserters.fromMultipartData(multipartBody))
+                        .retrieve()
+                        .bodyToMono(MAP_TYPE)
+                        .blockOptional()
+                        .orElseThrow(() -> new RuntimeException("Empty response from AI service"));
+            } catch (RuntimeException ex) {
+                throw new RuntimeException("AI service unavailable: " + ex.getMessage(), ex);
+            } catch (Throwable ex) {
+                throw new RuntimeException("AI service unavailable", ex);
+            }
 
             Map<String, Object> payload = extractPayload(aiResponse);
             String recognizedText = asString(payload.get("recognized_text_en"));

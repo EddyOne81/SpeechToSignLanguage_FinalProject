@@ -16,6 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+
 
 @Configuration
 @RequiredArgsConstructor
@@ -93,43 +96,49 @@ public class SecuritySeedDataConfig {
     }
 
     private Role ensureRoleWithPermissions(String code, String name, String description, Set<Permission> permissions) {
-    Role role = roleRepository.findByCode(code)
-            .orElseGet(() -> roleRepository.save(Role.builder()
-                    .code(code)
-                    .name(name)
-                    .description(description)
-                    .isSystem(true)
-                    .build()));
+        Role role = roleRepository.findByCode(code)
+                .orElseGet(() -> roleRepository.save(Role.builder()
+                        .code(code)
+                        .name(name)
+                        .description(description)
+                        .isSystem(true)
+                        .build()));
 
-    role.setPermissions(new HashSet<>(permissions));
-            return roleRepository.save(role);
+        Set<Long> existingPermIds = role.getPermissions().stream()
+                .map(Permission::getPermissionId).collect(Collectors.toSet());
+        Set<Long> newPermIds = permissions.stream()
+                .map(Permission::getPermissionId).collect(Collectors.toSet());
+        if (!existingPermIds.equals(newPermIds)) {
+            role.setPermissions(new HashSet<>(permissions));
+            role = roleRepository.save(role);
+        }
+        return role;
     }
 
     private void ensureDefaultAdminUser(Role adminRole, Role userRole) {
-            userRepository.findByUsername(adminUsername).ifPresentOrElse(existing -> {
-                    Set<Role> roles = existing.getRoles() == null ? new HashSet<>() : new HashSet<>(existing.getRoles());
-                    boolean changed = roles.add(adminRole);
-                    changed = roles.add(userRole) || changed;
+        Long adminRoleId = adminRole.getRoleId();
+        Long userRoleId = userRole.getRoleId();
 
-                    if (changed) {
-                            existing.setRoles(roles);
-                            userRepository.save(existing);
-                    }
-            }, () -> {
-                    String emailToUse = resolveAdminEmail();
+        UserSignLanguage admin = userRepository.findByUsername(adminUsername).orElseGet(() -> {
+            String emailToUse = resolveAdminEmail();
+            return userRepository.save(UserSignLanguage.builder()
+                    .username(adminUsername)
+                    .email(emailToUse)
+                    .passwordHash(passwordEncoder.encode(adminPassword))
+                    .emailVerified(true)
+                    .roles(new HashSet<>())
+                    .build());
+        });
 
-                    UserSignLanguage admin = UserSignLanguage.builder()
-                                    .username(adminUsername)
-                                    .email(emailToUse)
-                                    .passwordHash(passwordEncoder.encode(adminPassword))
-                                    .roles(new HashSet<>())
-                                    .build();
+        // Ensure admin is always email-verified (admin doesn't go through email flow)
+        if (!admin.isEmailVerified()) {
+            admin.setEmailVerified(true);
+            userRepository.save(admin);
+        }
 
-                    admin.getRoles().add(adminRole);
-                    admin.getRoles().add(userRole);
-
-                    userRepository.save(admin);
-            });
+        // Use idempotent native SQL to avoid Hibernate collection dirty-tracking issues
+        userRepository.assignRoleIfNotExists(admin.getUserId(), adminRoleId);
+        userRepository.assignRoleIfNotExists(admin.getUserId(), userRoleId);
     }
 
     private String resolveAdminEmail() {

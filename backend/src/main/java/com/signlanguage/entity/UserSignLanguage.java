@@ -36,4 +36,8 @@ public class UserSignLanguage {
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(columnDefinition = "boolean NOT NULL DEFAULT false")
+    @Builder.Default
+    private boolean emailVerified = false;
 }

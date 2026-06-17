@@ -99,6 +99,9 @@ public class GlobalExceptionHandler {
             return new ErrorMapping(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Invalid request");
         }
 
+        if (m.contains("service") || m.contains("connection") || m.contains("timeout") || m.contains("refused")) {
+            return new ErrorMapping(HttpStatus.SERVICE_UNAVAILABLE, "SERVICE_UNAVAILABLE", "Service temporarily unavailable");
+        }
         return new ErrorMapping(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Request failed");
     }
 
