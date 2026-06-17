@@ -669,6 +669,7 @@ export default function SignLanguageUI() {
       }
 
       applyTranslationResult(payload);
+      void loadHistories(0);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Da xay ra loi khong xac dinh.");
@@ -715,6 +716,7 @@ export default function SignLanguageUI() {
       }
 
       applyTranslationResult(payload);
+      void loadHistories(0);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Da xay ra loi khong xac dinh.");
