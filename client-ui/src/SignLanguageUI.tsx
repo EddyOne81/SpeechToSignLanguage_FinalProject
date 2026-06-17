@@ -211,7 +211,7 @@ export default function SignLanguageUI() {
     } catch (err: any) {
       console.error("[System] Microphone access error:", err);
       setErrorMsg(
-        "Khong the truy cap microphone. Vui long cap quyen trong cai dat trinh duyet.",
+        "Cannot access microphone. Please allow microphone access in your browser settings.",
       );
     }
   };
@@ -643,7 +643,7 @@ export default function SignLanguageUI() {
   const startTextTranslation = async (overrideText?: string) => {
     const text = (overrideText ?? inputText).trim();
     if (!text) {
-      setErrorMsg("Vui long nhap text truoc khi dich.");
+      setErrorMsg("Please enter text before translating.");
       return;
     }
 
@@ -672,7 +672,7 @@ export default function SignLanguageUI() {
       void loadHistories(0);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || "Da xay ra loi khong xac dinh.");
+      setErrorMsg(err.message || "An unexpected error occurred.");
     } finally {
       setIsProcessing(false);
     }
@@ -689,7 +689,7 @@ export default function SignLanguageUI() {
 
   const startTranslation = async () => {
     if (!audioFile) {
-      setErrorMsg("Vui long tai len tep am thanh hoac ghi am truc tiep.");
+      setErrorMsg("Please upload an audio file or record directly.");
       return;
     }
 
@@ -719,7 +719,7 @@ export default function SignLanguageUI() {
       void loadHistories(0);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || "Da xay ra loi khong xac dinh.");
+      setErrorMsg(err.message || "An unexpected error occurred.");
     } finally {
       setIsProcessing(false);
     }
