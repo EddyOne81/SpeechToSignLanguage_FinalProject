@@ -307,7 +307,7 @@ export default function AdminTab({ authToken, authUser }: AdminTabProps) {
   useEffect(() => {
     if (section === "users") loadUsers(0);
     else if (section === "dictionary") loadDictionary(0);
-    else if (section === "feedback") loadFeedbacks(0);
+    else if (section === "feedback") { loadFeedbacks(0); loadUsers(0); }
     else if (section === "overview") {
       loadUsers(0);
       loadDictionary(0);
@@ -842,7 +842,9 @@ export default function AdminTab({ authToken, authUser }: AdminTabProps) {
                     {feedbacks.map((fb) => (
                       <tr key={fb.feedbackId}>
                         <td className="py-2.5 pr-4 text-xs opacity-40">#{fb.feedbackId}</td>
-                        <td className="py-2.5 pr-4 text-xs">User #{fb.userId}</td>
+                        <td className="py-2.5 pr-4 text-xs">
+                          {users.find((u) => u.userId === fb.userId)?.username ?? `User #${fb.userId}`}
+                        </td>
                         <td className="py-2.5 pr-4 text-xs opacity-60">
                           {fb.historyId ? `#${fb.historyId}` : "—"}
                         </td>
