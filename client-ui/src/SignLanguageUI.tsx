@@ -275,7 +275,7 @@ export default function SignLanguageUI({
     setTranscript(recognized_text_en);
     console.log(`[System] Received ${pose_coordinates?.length ?? 0} JSON animation frames.`);
 
-    const hasData = pose_source_url && pose_coordinates?.length > 0;
+    const hasData = !!pose_source_url;
     if (offline_mode === true || !hasData) {
       setIsOfflineMode(true);
       setPoseBuffer(null);
@@ -304,7 +304,7 @@ export default function SignLanguageUI({
       const blobUrl = URL.createObjectURL(blob);
       prevBlobUrlRef.current = blobUrl;
       setIsOfflineMode(false);
-      setPoseBuffer({ frames: pose_coordinates, fps, sourceUrl: blobUrl });
+      setPoseBuffer({ frames: pose_coordinates ?? [], fps: fps ?? 25, sourceUrl: blobUrl });
     } catch {
       console.warn("[System] Pose binary unavailable for this phrase — animation disabled.");
       setIsOfflineMode(true);

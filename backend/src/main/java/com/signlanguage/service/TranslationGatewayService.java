@@ -113,6 +113,7 @@ public class TranslationGatewayService {
 
         Map<String, Object> payload = extractPayload(aiResponse);
         patchPoseSourceUrl(payload, cleanText, normalizedSpoken, normalizedSigned);
+        overrideOfflineModeIfCached(payload, normalizedText, normalizedSpoken, normalizedSigned);
         autoCachePoseIfNeeded(cleanText, normalizedText, normalizedSpoken, normalizedSigned, payload);
         Optional<SignDictionary> linkedEntry = findCachedEntry(
             normalizedText,
@@ -173,6 +174,7 @@ public class TranslationGatewayService {
             String normalizedSigned = normalizeLang(signedLang, "ase");
 
             patchPoseSourceUrl(payload, recognizedText, normalizedSpoken, normalizedSigned);
+            overrideOfflineModeIfCached(payload, normalizeText(recognizedText), normalizedSpoken, normalizedSigned);
             autoCachePoseIfNeeded(
                     recognizedText,
                     normalizeText(recognizedText),
@@ -608,5 +610,30 @@ public class TranslationGatewayService {
 
     private String asString(Object value) {
         return value == null ? null : String.valueOf(value);
+    }
+
+    private void overrideOfflineModeIfCached(
+            Map<String, Object> payload,
+            String normalizedText,
+            String spokenLang,
+            String signedLang
+    ) {
+        if (!Boolean.TRUE.equals(payload.get("offline_mode"))) {
+            return;
+        }
+        if (normalizedText == null || normalizedText.isBlank()) {
+            return;
+        }
+        Optional<SignDictionary> dbEntry = findCachedEntry(
+                normalizedText,
+                guessEntryType(normalizedText),
+                spokenLang,
+                signedLang
+        );
+        if (dbEntry.isPresent()
+                && dbEntry.get().getPoseData() != null
+                && dbEntry.get().getPoseData().length > 0) {
+            payload.remove("offline_mode");
+        }
     }
 }
