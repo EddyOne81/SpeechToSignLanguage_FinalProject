@@ -1,6 +1,5 @@
 package com.signlanguage.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signlanguage.entity.DictionaryCacheSource;
 import com.signlanguage.entity.DictionaryEntryType;
 import com.signlanguage.entity.SignDictionary;
@@ -38,7 +37,6 @@ public class TranslationGatewayService {
     private final WebClient aiWebClient;
     private final TranslationHistoryService translationHistoryService;
     private final SignDictionaryRepository dictionaryRepository;
-    private final ObjectMapper objectMapper;
 
     @Value("${app.public-base-url:http://127.0.0.1:8080}")
     private String appPublicBaseUrl;
@@ -218,14 +216,30 @@ public class TranslationGatewayService {
         );
 
         if (cachedEntry.isPresent()) {
-            Path cachedPath = resolvePosePath(cachedEntry.get().getPoseFilePath());
+            SignDictionary entry = cachedEntry.get();
+
+            // Priority 1: binary stored in Supabase — survives Railway restarts
+            if (entry.getPoseData() != null && entry.getPoseData().length > 0) {
+                return entry.getPoseData();
+            }
+
+            // Priority 2: legacy disk cache (may exist if disk hasn't been wiped yet)
+            Path cachedPath = resolvePosePath(entry.getPoseFilePath());
             if (cachedPath != null && Files.exists(cachedPath)) {
                 try {
-                    return Files.readAllBytes(cachedPath);
+                    byte[] bytes = Files.readAllBytes(cachedPath);
+                    // Back-fill Supabase so future requests survive restarts
+                    savePoseDataToDb(entry, bytes);
+                    return bytes;
                 } catch (IOException ex) {
-                    // Fallback to AI service if cached file is not readable.
+                    // Fall through to AI
                 }
             }
+
+            // Priority 3: fetch from AI and persist to Supabase
+            byte[] bytes = fetchPoseBytesFromAi(cleanText, normalizedSpoken, normalizedSigned);
+            savePoseDataToDb(entry, bytes);
+            return bytes;
         }
 
         return fetchPoseBytesFromAi(cleanText, normalizedSpoken, normalizedSigned);
@@ -322,24 +336,11 @@ public class TranslationGatewayService {
     ) {
         String poseSourceUrl = buildProxyPoseUrl(text, spokenLang, signedLang);
 
-        Object cachedCoords = Collections.emptyList();
-        int cachedFps = DEFAULT_CACHE_FPS;
-        if (dictionary.getPoseCoordsJson() != null) {
-            try {
-                cachedCoords = objectMapper.readValue(dictionary.getPoseCoordsJson(), Object.class);
-            } catch (Exception ex) {
-                cachedCoords = Collections.emptyList();
-            }
-        }
-        if (dictionary.getPoseFps() != null) {
-            cachedFps = dictionary.getPoseFps();
-        }
-
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("recognized_text_en", text);
-        payload.put("pose_coordinates", cachedCoords);
+        payload.put("pose_coordinates", Collections.emptyList());
         payload.put("pose_source_url", poseSourceUrl);
-        payload.put("fps", cachedFps);
+        payload.put("fps", DEFAULT_CACHE_FPS);
 
         Map<String, Object> ruleDebug = new LinkedHashMap<>();
         ruleDebug.put("source", source);
@@ -368,22 +369,6 @@ public class TranslationGatewayService {
         if (!shouldAutoCache(normalizedText, entryType)) {
             return;
         }
-
-        // Grab pose_coordinates from the AI payload — already returned, no extra call needed.
-        Object coordsObj = payload.get("pose_coordinates");
-        if (coordsObj == null) {
-            return;
-        }
-        String coordsJson;
-        try {
-            coordsJson = objectMapper.writeValueAsString(coordsObj);
-        } catch (Exception ex) {
-            return;
-        }
-
-        Object fpsObj = payload.get("fps");
-        int fpsi = fpsObj instanceof Number n ? n.intValue() : DEFAULT_CACHE_FPS;
-
         Optional<SignDictionary> existing = dictionaryRepository
                 .findFirstByNormalizedTextAndEntryTypeAndSpokenLangAndSignedLang(
                         normalizedText,
@@ -393,22 +378,28 @@ public class TranslationGatewayService {
                 );
 
         if (existing.isPresent()) {
-            // Back-fill coords for entries created before this feature was added.
+            // Back-fill Supabase binary for entries that only have a (now-missing) disk path.
             SignDictionary entry = existing.get();
-            if (entry.getPoseCoordsJson() != null) {
+            if (entry.getPoseData() != null) {
                 return;
             }
-            entry.setPoseCoordsJson(coordsJson);
-            entry.setPoseFps(fpsi);
             try {
-                dictionaryRepository.save(entry);
-            } catch (Exception ex) {
-                // Non-critical — ignore.
+                byte[] bytes = fetchPoseBytesFromAi(cleanText, spokenLang, signedLang);
+                savePoseDataToDb(entry, bytes);
+            } catch (RuntimeException ex) {
+                // Non-critical — will retry on next translation.
             }
             return;
         }
 
         if (dictionaryRepository.existsByEnglishTextIgnoreCase(cleanText)) {
+            return;
+        }
+
+        byte[] poseBytes;
+        try {
+            poseBytes = fetchPoseBytesFromAi(cleanText, spokenLang, signedLang);
+        } catch (RuntimeException ex) {
             return;
         }
 
@@ -419,8 +410,7 @@ public class TranslationGatewayService {
                 .spokenLang(spokenLang)
                 .signedLang(signedLang)
                 .cacheSource(DictionaryCacheSource.AUTO_CACHED)
-                .poseCoordsJson(coordsJson)
-                .poseFps(fpsi)
+                .poseData(poseBytes)
                 .isVerified(false)
                 .build();
 
@@ -428,6 +418,15 @@ public class TranslationGatewayService {
             dictionaryRepository.save(dictionary);
         } catch (DataIntegrityViolationException ex) {
             // Another request already inserted the same entry.
+        }
+    }
+
+    private void savePoseDataToDb(SignDictionary entry, byte[] bytes) {
+        try {
+            entry.setPoseData(bytes);
+            dictionaryRepository.save(entry);
+        } catch (Exception ex) {
+            // Non-critical — binary is still served to the caller.
         }
     }
 

@@ -33,11 +33,8 @@ public class SignDictionary {
 
     private String poseFilePath;
 
-    @Column(name = "pose_coords_json", columnDefinition = "text")
-    private String poseCoordsJson;
-
-    @Column(name = "pose_fps")
-    private Integer poseFps;
+    @Column(name = "pose_data", columnDefinition = "bytea")
+    private byte[] poseData;
 
     private Boolean isVerified;
 
