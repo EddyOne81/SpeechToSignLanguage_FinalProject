@@ -113,6 +113,7 @@ public class UserFeedbackController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("feedbackId", feedback.getFeedbackId());
         result.put("userId", feedback.getUser() == null ? null : feedback.getUser().getUserId());
+        result.put("username", feedback.getUser() == null ? null : feedback.getUser().getUsername());
         result.put("historyId", feedback.getHistory() == null ? null : feedback.getHistory().getHistoryId());
         result.put("rating", feedback.getRating() == null ? 0 : feedback.getRating());
         result.put("comment", feedback.getComment() == null ? "" : feedback.getComment());

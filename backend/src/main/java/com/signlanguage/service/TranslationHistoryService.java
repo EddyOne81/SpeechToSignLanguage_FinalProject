@@ -143,6 +143,7 @@ public class TranslationHistoryService {
 		Map<String, Object> result = new LinkedHashMap<>();
 		result.put("historyId", history.getHistoryId());
 		result.put("userId", history.getUser() == null ? null : history.getUser().getUserId());
+		result.put("username", history.getUser() == null ? null : history.getUser().getUsername());
 		result.put("wordId", history.getWord() == null ? null : history.getWord().getWordId());
 		result.put("inputText", history.getInputText() == null ? "" : history.getInputText());
 		result.put("poseFilePath", history.getPoseFilePath() == null ? "" : history.getPoseFilePath());
