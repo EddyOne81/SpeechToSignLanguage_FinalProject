@@ -611,6 +611,13 @@ body,
 .app-shell.theme-light .text-slate-400 { color: #434654 !important; }
 .app-shell.theme-light .text-slate-500 { color: #737685 !important; }
 .app-shell.theme-light .text-slate-600 { color: #737685 !important; }
+/* Account tab: Google button + tab switcher */
+.app-shell.theme-light .bg-slate-800\/60 { background-color: #f1f3f7 !important; }
+.app-shell.theme-light .bg-slate-800\/40 { background-color: rgba(0,61,155,0.06) !important; }
+.app-shell.theme-light .border-slate-700\/60 { border-color: rgba(0,61,155,0.14) !important; }
+.app-shell.theme-light .border-slate-600\/60 { border-color: rgba(0,0,0,0.14) !important; }
+.app-shell.theme-light .hover\:bg-slate-700\/60:hover { background-color: #e8ecf4 !important; }
+.app-shell.theme-light .hover\:border-slate-500:hover { border-color: rgba(0,0,0,0.22) !important; }
 
 /* Admin panel light mode — separate scope via .admin-panel class */
 .admin-panel.theme-light { background-color: #f0f5fb !important; }
