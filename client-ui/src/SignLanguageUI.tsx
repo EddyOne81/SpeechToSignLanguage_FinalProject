@@ -348,7 +348,7 @@ export default function SignLanguageUI({
   const handleLogout = () => {
     setAuthUser(null);
     onAuthChange?.(null);
-    setAuthMessage("Logged out.");
+    setAuthMessage("");
     onLogout?.();
   };
 
