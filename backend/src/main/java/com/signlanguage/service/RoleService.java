@@ -49,7 +49,7 @@ public class RoleService {
                 .code(request.getCode())
                 .name(request.getName())
                 .description(request.getDescription())
-                .isSystem(request.getIsSystem() == null ? true : request.getIsSystem())
+                .isSystem(request.getIsSystem() != null && request.getIsSystem())
                 .permissions(resolvePermissions(request.getPermissionCodes()))
                 .build();
 
