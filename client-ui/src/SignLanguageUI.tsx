@@ -96,7 +96,7 @@ export default function SignLanguageUI({
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyPage, setHistoryPage] = useState(0);
-  const [historySize] = useState(12);
+  const [historySize] = useState(8);
   const [historyTotalPages, setHistoryTotalPages] = useState(0);
   const [historyTotalElements, setHistoryTotalElements] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -775,7 +775,7 @@ export default function SignLanguageUI({
           setIsMobileOpen={setIsMobileSidebarOpen}
         />
 
-        <div className="app-content flex h-full min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="app-content flex h-full min-w-0 flex-1 flex-col overflow-y-auto xl:overflow-hidden">
           {isAdminMode && (
             <div className="flex items-center justify-between gap-3 bg-indigo-600 px-4 py-2 text-sm text-white">
               <span className="font-medium">Viewing as user (Admin mode)</span>

@@ -53,7 +53,7 @@ export default function FeedbackTab({
   openHistoryFromFeedback,
 }: FeedbackTabProps) {
   return (
-    <div className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-12">
+    <div className="grid flex-1 min-h-0 grid-cols-1 gap-6 xl:grid-cols-12 xl:grid-rows-1">
       <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-4">
         <h3 className="text-sm font-semibold ">
           Submit Feedback
@@ -134,7 +134,7 @@ export default function FeedbackTab({
         )}
       </div>
 
-      <div className="flex min-h-[320px] flex-col glass-panel rounded-2xl p-5 shadow-lg xl:col-span-8">
+      <div className="flex min-h-0 flex-col overflow-hidden glass-panel rounded-2xl p-5 shadow-lg xl:col-span-8">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold ">
             Your Feedbacks
@@ -185,7 +185,7 @@ export default function FeedbackTab({
         <div className="mt-2 text-right text-xs text-slate-500">
           {feedbackTotalElements} total
         </div>
-        <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
+        <div className="mt-4 flex-1 min-h-0 space-y-3 overflow-y-auto">
           {!isLoggedIn ? (
             <p className="text-sm text-slate-500">
               Login to view your feedbacks.
@@ -259,7 +259,7 @@ export default function FeedbackTab({
           )}
         </div>
         {isLoggedIn && !feedbackError && (
-          <div className="ui-divider-top mt-4 flex flex-wrap items-center justify-between gap-3 pt-3">
+          <div className="ui-divider-top mt-4 shrink-0 flex flex-wrap items-center justify-between gap-3 pt-3">
             <div className="text-xs text-slate-400">
               Page {feedbackTotalPages > 0 ? feedbackPage + 1 : 0} /{" "}
               {feedbackTotalPages || 0}

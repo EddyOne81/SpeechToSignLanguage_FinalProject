@@ -31,7 +31,7 @@ export default function DictionaryTab({
   startTextTranslation,
 }: DictionaryTabProps) {
   return (
-    <div className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-12">
+    <div className="grid flex-1 min-h-0 grid-cols-1 gap-6 xl:grid-cols-12 xl:grid-rows-1">
       <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-4">
         <h3 className="text-sm font-semibold ">
           Dictionary Search
@@ -82,7 +82,7 @@ export default function DictionaryTab({
         </div>
       </div>
 
-      <div className="flex min-h-[320px] flex-col glass-panel rounded-2xl p-5 shadow-lg xl:col-span-8">
+      <div className="flex min-h-0 flex-col overflow-hidden glass-panel rounded-2xl p-5 shadow-lg xl:col-span-8">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold ">
             Results
@@ -91,7 +91,7 @@ export default function DictionaryTab({
             {dictTotalElements} items
           </span>
         </div>
-        <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
+        <div className="mt-4 flex-1 min-h-0 space-y-3 overflow-y-auto">
           {dictLoading ? (
             <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -147,7 +147,7 @@ export default function DictionaryTab({
             </p>
           )}
         </div>
-        <div className="ui-divider-top mt-4 flex flex-wrap items-center justify-between gap-3 pt-3">
+        <div className="ui-divider-top mt-4 shrink-0 flex flex-wrap items-center justify-between gap-3 pt-3">
           <div className="text-xs text-slate-400">
             Page {dictTotalPages > 0 ? dictPage + 1 : 0} /{" "}
             {dictTotalPages || 0}
