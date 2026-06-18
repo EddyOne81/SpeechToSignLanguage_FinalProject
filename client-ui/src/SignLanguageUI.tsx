@@ -180,10 +180,33 @@ export default function SignLanguageUI({
   }, [activeTab]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setAudioFile(event.target.files[0]);
-      setErrorMsg(null);
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg("File too large. Maximum size is 10 MB.");
+      event.target.value = "";
+      return;
     }
+
+    const url = URL.createObjectURL(file);
+    const audio = new Audio();
+    audio.addEventListener("loadedmetadata", () => {
+      URL.revokeObjectURL(url);
+      if (audio.duration > 60) {
+        setErrorMsg("Audio too long. Maximum duration is 60 seconds.");
+        event.target.value = "";
+        return;
+      }
+      setAudioFile(file);
+      setErrorMsg(null);
+    });
+    audio.addEventListener("error", () => {
+      URL.revokeObjectURL(url);
+      setAudioFile(file);
+      setErrorMsg(null);
+    });
+    audio.src = url;
   };
 
   const startRecording = async () => {
