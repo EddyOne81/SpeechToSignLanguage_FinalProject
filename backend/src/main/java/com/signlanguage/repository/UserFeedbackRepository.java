@@ -6,12 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.signlanguage.entity.UserFeedback;
 
-@Repository
 public interface UserFeedbackRepository extends JpaRepository<UserFeedback, Long> {
 	Page<UserFeedback> findByUserUserId(Long userId, Pageable pageable);
 	Page<UserFeedback> findByUserUserIdAndHistoryHistoryId(Long userId, Long historyId, Pageable pageable);

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Loader2, MailWarning, Send, X } from "lucide-react";
 import AppSidebar from "./components/AppSidebar";
 import AppFooter from "./components/AppFooter";
 import PageHeader from "./components/PageHeader";
@@ -121,6 +122,10 @@ export default function SignLanguageUI({
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileForm, setProfileForm] = useState({ email: "" });
+
+  const [emailBannerDismissed, setEmailBannerDismissed] = useState(false);
+  const [resendVerifyLoading, setResendVerifyLoading] = useState(false);
+  const [resendVerifyMsg, setResendVerifyMsg] = useState<string | null>(null);
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: "",
     newPassword: "",
@@ -149,6 +154,7 @@ export default function SignLanguageUI({
   }, []);
 
   useEffect(() => {
+    setEmailBannerDismissed(false);
     if (!authUser) {
       setProfile(null);
       return;
@@ -597,6 +603,22 @@ export default function SignLanguageUI({
     }
   };
 
+  const handleResendVerification = async () => {
+    setResendVerifyLoading(true);
+    setResendVerifyMsg(null);
+    try {
+      await fetch(`${BACKEND_BASE_URL}/api/auth/resend-verification`, {
+        method: "POST",
+        credentials: "include",
+      });
+      setResendVerifyMsg("Verification email sent! Check your inbox.");
+    } catch {
+      setResendVerifyMsg("Failed to send email. Please try again.");
+    } finally {
+      setResendVerifyLoading(false);
+    }
+  };
+
   const loadProfile = async () => {
     if (!authUser) {
       return;
@@ -767,6 +789,36 @@ export default function SignLanguageUI({
           )}
           <main className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-8">
         <PageHeader activeTab={activeTab} />
+
+        {authUser && profile?.emailVerified === false && !emailBannerDismissed && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <MailWarning className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-amber-300">Email not verified</p>
+              {resendVerifyMsg ? (
+                <p className="mt-0.5 text-xs text-emerald-400">{resendVerifyMsg}</p>
+              ) : (
+                <p className="mt-0.5 text-xs text-amber-300/80">
+                  Some features are locked until you verify your email.{" "}
+                  <button
+                    onClick={handleResendVerification}
+                    disabled={resendVerifyLoading}
+                    className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 hover:text-amber-200 disabled:opacity-50"
+                  >
+                    {resendVerifyLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                    Resend verification email
+                  </button>
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setEmailBannerDismissed(true)}
+              className="shrink-0 rounded p-0.5 text-amber-400/60 hover:text-amber-300"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
         {activeTab === "translate" && (
           <TranslateTab

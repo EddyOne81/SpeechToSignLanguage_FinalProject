@@ -343,216 +343,212 @@ export default function AccountTab({
   }
 
   /* ── Logged-in view ── */
-  return (
-    <div className="grid flex-1 grid-cols-1 items-start gap-5 xl:grid-cols-12">
+  const username = profile?.username ?? authUser?.username ?? "?";
+  const initials = username[0].toUpperCase();
+  const isAdmin = authUser?.role === "ROLE_ADMIN";
+  const isVerified = profile?.emailVerified === true;
 
-      {/* Profile Card */}
-      <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg xl:col-span-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold" style={{ color: "var(--text-main)" }}>Profile</h3>
+  return (
+    <div className="flex flex-1 flex-col gap-6">
+
+      {/* ══ PROFILE HERO ══ */}
+      <div className="glass-panel relative overflow-hidden rounded-2xl shadow-xl">
+        {/* Subtle gradient accent strip */}
+        <div className="absolute inset-x-0 top-0 h-px"
+          style={{ background: "linear-gradient(90deg, transparent, #6366f1 40%, #8b5cf6 60%, transparent)" }} />
+        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full opacity-10 blur-3xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent 70%)" }} />
+
+        <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:gap-6">
+          {/* Avatar */}
+          <div className="relative shrink-0 self-center sm:self-auto">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl text-3xl font-black shadow-2xl"
+              style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #a855f7 100%)" }}>
+              <span className="text-white">{initials}</span>
+            </div>
+            {isVerified && (
+              <div className="absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 shadow-lg ring-2 ring-slate-900">
+                <ShieldCheck className="h-3.5 w-3.5 text-white" />
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="flex flex-1 flex-col gap-2 sm:min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-main)" }}>
+                {username}
+              </h2>
+              <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
+                isAdmin
+                  ? "bg-rose-500/15 text-rose-400 ring-1 ring-rose-500/25"
+                  : "bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/25"
+              }`}>
+                {isAdmin ? "Admin" : "Member"}
+              </span>
+              {isVerified
+                ? <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 ring-1 ring-emerald-500/20">
+                    <ShieldCheck className="h-2.5 w-2.5" /> Verified
+                  </span>
+                : profile && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400 ring-1 ring-amber-500/20">
+                    <Mail className="h-2.5 w-2.5" /> Unverified
+                  </span>
+                )
+              }
+            </div>
+
+            {profileLoading ? (
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
+                {profile?.email && (
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-slate-500" />
+                    {profile.email}
+                  </span>
+                )}
+                {profile?.createdAt && (
+                  <span className="flex items-center gap-1.5">
+                    <UserCircle className="h-3.5 w-3.5 text-slate-500" />
+                    Joined {formatDate(profile.createdAt)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Refresh btn */}
           <button
             onClick={loadProfile}
             disabled={profileLoading}
-            className="flex items-center gap-1.5 ui-btn-secondary rounded-full px-3 py-1 text-[11px] uppercase transition disabled:opacity-50"
+            className="ui-btn-secondary flex shrink-0 items-center gap-1.5 self-start rounded-xl px-3 py-1.5 text-xs font-medium transition disabled:opacity-40 sm:self-center"
           >
-            {profileLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            {profileLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
-          </button>
-        </div>
-
-        {/* Avatar */}
-        <div className="flex flex-col items-center gap-3 py-2">
-          <div
-            className="relative flex h-20 w-20 items-center justify-center rounded-full text-3xl font-bold shadow-xl ring-4 ring-offset-2"
-            style={{
-              background: "linear-gradient(135deg, var(--accent-strong), #8b5cf6)",
-              color: "#fff",
-              ringColor: "var(--accent)",
-              ringOffsetColor: "var(--bg-main)",
-            }}
-          >
-            {(profile?.username ?? authUser?.username ?? "?")[0].toUpperCase()}
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold" style={{ color: "var(--text-main)" }}>
-              {profile?.username ?? authUser?.username ?? "—"}
-            </p>
-            <div className="mt-1.5 flex items-center justify-center gap-2">
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                authUser?.role === "ROLE_ADMIN" ? "ui-pill-danger" : "ui-pill-accent"
-              }`}>
-                {authUser?.role === "ROLE_ADMIN" ? "Admin" : "Member"}
-              </span>
-              {profile?.emailVerified === false && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-400 ring-1 ring-amber-500/30">
-                  <Mail className="h-2.5 w-2.5" />
-                  Unverified
-                </span>
-              )}
-              {profile?.emailVerified === true && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400 ring-1 ring-emerald-500/30">
-                  <ShieldCheck className="h-2.5 w-2.5" />
-                  Verified
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Info rows */}
-        {profileLoading ? (
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading…
-          </div>
-        ) : profile ? (
-          <div className="space-y-2">
-            <div className="glass-inset flex items-center justify-between rounded-xl px-3 py-2.5 text-xs">
-              <span className="text-slate-400">Email</span>
-              <span className="ml-4 max-w-[55%] truncate text-right font-medium" style={{ color: "var(--text-main)" }}>
-                {profile.email ?? "—"}
-              </span>
-            </div>
-            <div className="glass-inset flex items-center justify-between rounded-xl px-3 py-2.5 text-xs">
-              <span className="text-slate-400">Joined</span>
-              <span className="text-right font-medium" style={{ color: "var(--text-main)" }}>
-                {formatDate(profile.createdAt)}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">No profile loaded.</p>
-        )}
-
-        {/* Email verification banner */}
-        {profile?.emailVerified === false && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-            <p className="mb-2 text-xs text-amber-300 font-medium">
-              Verify your email to unlock all features.
-            </p>
-            {resendMsg ? (
-              <p className="text-xs text-emerald-400">{resendMsg}</p>
-            ) : (
-              <button
-                onClick={handleResendVerification}
-                disabled={resendLoading}
-                className="flex items-center gap-1.5 rounded-lg bg-amber-600/30 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-600/50 disabled:opacity-50"
-              >
-                {resendLoading
-                  ? <Loader2 className="h-3 w-3 animate-spin" />
-                  : <Send className="h-3 w-3" />
-                }
-                Resend verification email
-              </button>
-            )}
-          </div>
-        )}
-
-        {profileError && (
-          <div className={`flex items-center gap-2 rounded-xl p-2 text-xs ${
-            profileError === "Password updated."
-              ? "ui-alert-info"
-              : "ui-alert-error"
-          }`}>
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {profileError}
-          </div>
-        )}
-
-        <div className="ui-divider-top mt-auto pt-4">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-xs font-semibold text-rose-400 transition hover:bg-rose-500/20 uppercase tracking-wide"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Sign Out
           </button>
         </div>
       </div>
 
-      {/* Actions Column */}
-      <div className="flex flex-col gap-4 xl:col-span-8">
-
-        {/* Update Email */}
-        <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg">
-          <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--text-main)" }}>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20">
-              <UserCircle className="h-4 w-4 text-indigo-400" />
+      {/* ══ EMAIL NOT VERIFIED ALERT ══ */}
+      {profile?.emailVerified === false && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 sm:flex-row sm:items-center">
+          <div className="flex items-start gap-3 flex-1">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/15">
+              <Mail className="h-4 w-4 text-amber-400" />
             </div>
-            Update Email
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            <input
-              type="email"
-              value={profileForm.email}
-              onChange={(e) => setProfileForm({ email: e.target.value })}
-              onKeyDown={(e) => { if (e.key === "Enter") void updateProfile(); }}
-              placeholder="New email address"
-              className="ui-input min-w-[200px] flex-1 rounded-xl px-3.5 py-2.5 text-sm"
-            />
+            <div>
+              <p className="text-sm font-semibold text-amber-300">Verify your email address</p>
+              <p className="mt-0.5 text-xs text-amber-300/60">
+                Check your inbox for a verification link. Some features are restricted until verified.
+              </p>
+              {resendMsg && <p className="mt-1.5 text-xs text-emerald-400">{resendMsg}</p>}
+            </div>
+          </div>
+          {!resendMsg && (
+            <button
+              onClick={handleResendVerification}
+              disabled={resendLoading}
+              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-amber-500/15 px-4 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/25 disabled:opacity-50 sm:self-center"
+            >
+              {resendLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+              Resend email
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ══ SETTINGS GRID ══ */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+
+        {/* Email */}
+        <div className="glass-panel flex flex-col rounded-2xl shadow-lg">
+          <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 ring-1 ring-indigo-500/20">
+              <Mail className="h-4 w-4 text-indigo-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--text-main)" }}>Email Address</p>
+              <p className="text-[11px] text-slate-500">Change the email linked to your account</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 p-5">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                Email
+              </label>
+              <input
+                type="email"
+                value={profileForm.email}
+                onChange={(e) => setProfileForm({ email: e.target.value })}
+                onKeyDown={(e) => { if (e.key === "Enter") void updateProfile(); }}
+                placeholder="your@email.com"
+                className="ui-input w-full rounded-xl px-3.5 py-2.5 text-sm"
+              />
+            </div>
             <button
               onClick={updateProfile}
-              className="ui-btn-primary flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-wide transition"
+              className="ui-btn-primary flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold uppercase tracking-wide transition active:scale-[0.98]"
             >
-              <UserCircle className="h-3.5 w-3.5" />
-              Save
+              Save Changes
             </button>
           </div>
         </div>
 
-        {/* Change Password */}
-        <div className="flex flex-col gap-4 glass-panel rounded-2xl p-5 shadow-lg">
-          <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--text-main)" }}>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/20">
+        {/* Password */}
+        <div className="glass-panel flex flex-col rounded-2xl shadow-lg">
+          <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 ring-1 ring-violet-500/20">
               <KeyRound className="h-4 w-4 text-violet-400" />
             </div>
-            Change Password
-          </h3>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wide text-slate-500">Current Password</label>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--text-main)" }}>Password</p>
+              <p className="text-[11px] text-slate-500">Use a strong password with mixed characters</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 p-5">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                Current Password
+              </label>
               <div className="relative">
                 <input
                   type={showOldPassword ? "text" : "password"}
                   value={passwordForm.oldPassword}
                   onChange={(e) => setPasswordForm((p) => ({ ...p, oldPassword: e.target.value }))}
-                  placeholder="Current password"
+                  placeholder="Enter current password"
                   className="ui-input w-full rounded-xl px-3.5 py-2.5 pr-10 text-sm"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowOldPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200"
-                >
+                <button type="button" onClick={() => setShowOldPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200">
                   {showOldPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wide text-slate-500">New Password</label>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                New Password
+              </label>
               <div className="relative">
                 <input
                   type={showNewPassword ? "text" : "password"}
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
-                  placeholder="New password"
+                  placeholder="Enter new password"
                   className="ui-input w-full rounded-xl px-3.5 py-2.5 pr-10 text-sm"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200"
-                >
+                <button type="button" onClick={() => setShowNewPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200">
                   {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               <PasswordStrength password={passwordForm.newPassword} />
             </div>
-          </div>
-          <div className="flex justify-end">
             <button
               onClick={updatePassword}
-              className="ui-btn-primary flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-wide transition"
+              className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-violet-500 active:scale-[0.98]"
             >
               <KeyRound className="h-3.5 w-3.5" />
               Update Password
@@ -561,14 +557,40 @@ export default function AccountTab({
         </div>
       </div>
 
-      {authMessage && (
-        <div className="xl:col-span-12">
-          <div className="flex items-center gap-2 rounded-xl bg-indigo-900/30 p-3 text-xs text-indigo-300 ring-1 ring-indigo-500/30">
-            <UserCircle className="h-4 w-4 shrink-0" />
-            {authMessage}
-          </div>
+      {/* ══ FEEDBACK ══ */}
+      {(profileError || authMessage) && (
+        <div className={`flex items-center gap-2.5 rounded-xl p-3.5 text-sm ${
+          profileError === "Password updated." || authMessage
+            ? "ui-alert-info"
+            : "ui-alert-error"
+        }`}>
+          {profileError === "Password updated." || authMessage
+            ? <CheckCircle2 className="h-4 w-4 shrink-0" />
+            : <AlertCircle className="h-4 w-4 shrink-0" />
+          }
+          {profileError || authMessage}
         </div>
       )}
+
+      {/* ══ DANGER ZONE ══ */}
+      <div className="mt-auto rounded-2xl border border-rose-500/15 bg-rose-500/5 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-rose-400">Sign out</p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              You will be signed out of your account on this device.
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-rose-400 transition hover:bg-rose-500/20 hover:border-rose-400/50 active:scale-[0.98] sm:self-center"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sign Out
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }

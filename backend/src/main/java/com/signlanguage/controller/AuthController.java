@@ -1,6 +1,10 @@
 package com.signlanguage.controller;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
@@ -25,6 +29,9 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response) {
@@ -58,13 +65,22 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
-        authService.verifyEmail(token);
-        return ApiResponses.ok(Map.of("message", "Email verified successfully"));
+    public void verifyEmail(@RequestParam String token, HttpServletResponse response) throws IOException {
+        try {
+            authService.verifyEmail(token);
+            response.sendRedirect(frontendUrl + "/?emailVerified=true");
+        } catch (RuntimeException e) {
+            String msg = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+            response.sendRedirect(frontendUrl + "/?emailVerified=false&reason=" + msg);
+        }
     }
 
     @PostMapping("/resend-verification")
     public ResponseEntity<?> resendVerification(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).build();
+        }
         authService.resendVerificationEmail(authentication.getName());
         return ApiResponses.ok(Map.of("message", "Verification email sent"));
     }

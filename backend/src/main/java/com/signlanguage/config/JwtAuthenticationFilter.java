@@ -48,19 +48,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities());
+                if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities());
 
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                // Always override any session-based (OAuth2) authentication with the JWT principal
-                // so auth.getName() returns the DB username, not the OAuth2 provider's user identifier.
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    // Always override any session-based (OAuth2) authentication with the JWT principal
+                    // so auth.getName() returns the DB username, not the OAuth2 provider's user identifier.
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            } catch (RuntimeException ex) {
+                // Stale or invalid token — treat as unauthenticated and continue
+                filterChain.doFilter(request, response);
+                return;
             }
         }
 

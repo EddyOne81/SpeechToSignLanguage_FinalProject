@@ -1,5 +1,6 @@
 package com.signlanguage.service;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         Set<SimpleGrantedAuthority> authorities = user.getRoles().stream()
             .flatMap(role -> buildAuthorities(role).stream())
-            .collect(Collectors.toSet());
+            .collect(Collectors.toCollection(HashSet::new));
+
+        if (!user.isEmailVerified()) {
+            authorities.add(new SimpleGrantedAuthority("EMAIL_UNVERIFIED"));
+        }
 
         return new User(
                 user.getUsername(),

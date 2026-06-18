@@ -40,6 +40,11 @@ services:
       AI_SERVER_URL: http://ai-service:8000
       JWT_SECRET: ${JWT_SECRET:-VGhpc0lzQURldk9ubHlTZWNyZXRLZXlGb3JTaWduTGFuZ3VhZ2VBcHAxMjM0NTY=}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      MAIL_USERNAME: ${MAIL_USERNAME:}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:}
     ports:
       - "8080:8080"
     depends_on:
