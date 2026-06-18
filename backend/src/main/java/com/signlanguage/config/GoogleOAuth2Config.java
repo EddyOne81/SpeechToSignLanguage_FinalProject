@@ -20,6 +20,9 @@ public class GoogleOAuth2Config {
     @Value("${google.oauth2.client-secret:}")
     private String clientSecret;
 
+    @Value("${app.public-base-url:http://localhost:8080}")
+    private String appPublicBaseUrl;
+
     @Bean
     @ConditionalOnExpression("!'${google.oauth2.client-id:}'.isEmpty()")
     public ClientRegistrationRepository clientRegistrationRepository() {
@@ -28,7 +31,7 @@ public class GoogleOAuth2Config {
             .clientSecret(clientSecret)
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+            .redirectUri(appPublicBaseUrl + "/login/oauth2/code/google")
             .scope("openid", "email", "profile")
             .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
             .tokenUri("https://www.googleapis.com/oauth2/v4/token")
