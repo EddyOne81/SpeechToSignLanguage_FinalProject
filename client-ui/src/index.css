@@ -611,7 +611,6 @@ body,
 .app-shell.theme-light .text-slate-400 { color: #434654 !important; }
 .app-shell.theme-light .text-slate-500 { color: #737685 !important; }
 .app-shell.theme-light .text-slate-600 { color: #737685 !important; }
-.app-shell.theme-light .text-white { color: #101c2d !important; }
 
 /* Admin panel light mode — separate scope via .admin-panel class */
 .admin-panel.theme-light { background-color: #f0f5fb !important; }
