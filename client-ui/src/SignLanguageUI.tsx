@@ -283,8 +283,9 @@ export default function SignLanguageUI({
       return;
     }
 
-    // Resolve to a relative URL so the fetch goes through the same origin/proxy
-    const poseRelativeUrl = (() => {
+    // Resolve to a backend-relative path and prepend BACKEND_BASE_URL so the
+    // request goes to Railway (Spring Boot), not the Netlify frontend origin.
+    const posePath = (() => {
       try {
         const { pathname, search } = new URL(pose_source_url);
         return pathname + search;
@@ -293,11 +294,8 @@ export default function SignLanguageUI({
       }
     })();
 
-    // Pre-fetch the binary .pose file in JS so we can handle errors gracefully.
-    // On success, create a Blob URL — the web component never sees a failing URL.
-    // On failure, fall back to offline mode with a clear message.
     try {
-      const res = await fetch(poseRelativeUrl);
+      const res = await fetch(`${BACKEND_BASE_URL}${posePath}`);
       if (!res.ok) throw new Error(`${res.status}`);
       const blob = await res.blob();
       if (prevBlobUrlRef.current) {
