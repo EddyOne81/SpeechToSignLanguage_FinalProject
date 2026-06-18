@@ -23,7 +23,15 @@ interface AdminAppProps {
 
 export default function AdminApp({ authUser, onGoToApp, onLogout }: AdminAppProps) {
   const [activePage, setActivePage] = useState<AdminPage>("dashboard");
-  const theme = localStorage.getItem("s2s_theme") === "light" ? "light" : "dark";
+  const [theme, setTheme] = useState<"dark" | "light">(
+    () => (localStorage.getItem("s2s_admin_theme") === "light" ? "light" : "dark")
+  );
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    localStorage.setItem("s2s_admin_theme", next);
+  };
 
   const renderPage = () => {
     switch (activePage) {
@@ -48,6 +56,8 @@ export default function AdminApp({ authUser, onGoToApp, onLogout }: AdminAppProp
         activePage={activePage}
         setActivePage={setActivePage}
         authUser={authUser}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onGoToApp={onGoToApp}
         onLogout={onLogout}
       />

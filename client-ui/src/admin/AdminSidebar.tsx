@@ -5,8 +5,10 @@ import {
   History,
   LogOut,
   MessageSquare,
+  Moon,
   Shield,
   ShieldCheck,
+  Sun,
   type LucideIcon,
   Users,
 } from "lucide-react";
@@ -25,6 +27,8 @@ interface AdminSidebarProps {
   activePage: AdminPage;
   setActivePage: (page: AdminPage) => void;
   authUser: { username?: string; role?: string };
+  theme: "dark" | "light";
+  onToggleTheme: () => void;
   onGoToApp: () => void;
   onLogout: () => void;
 }
@@ -33,6 +37,8 @@ export default function AdminSidebar({
   activePage,
   setActivePage,
   authUser,
+  theme,
+  onToggleTheme,
   onGoToApp,
   onLogout,
 }: AdminSidebarProps) {
@@ -61,6 +67,13 @@ export default function AdminSidebar({
       </nav>
 
       <div className="border-t border-neutral-800 p-2 space-y-1">
+        <button
+          onClick={onToggleTheme}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
+          {theme === "dark" ? "Light Mode" : "Dark Mode"}
+        </button>
         <button
           onClick={onGoToApp}
           className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-emerald-400 transition-colors hover:bg-neutral-800 hover:text-emerald-300"
