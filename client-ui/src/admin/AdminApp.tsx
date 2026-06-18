@@ -51,7 +51,7 @@ export default function AdminApp({ authUser, onGoToApp, onLogout }: AdminAppProp
   };
 
   return (
-    <div className={`flex h-screen overflow-hidden bg-neutral-950 text-neutral-100${theme === "light" ? " theme-light" : ""}`}>
+    <div className={`admin-panel flex h-screen overflow-hidden bg-neutral-950 text-neutral-100${theme === "light" ? " theme-light" : ""}`}>
       <AdminSidebar
         activePage={activePage}
         setActivePage={setActivePage}
