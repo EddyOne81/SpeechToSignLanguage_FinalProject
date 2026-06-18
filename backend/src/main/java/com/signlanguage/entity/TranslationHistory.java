@@ -27,9 +27,6 @@ public class TranslationHistory {
     @Column(columnDefinition = "TEXT")
     private String inputText;
 
-    @Column(columnDefinition = "TEXT")
-    private String fswResult;
-
     private String poseFilePath;
 
     private Integer processingTimeMs;

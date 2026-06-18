@@ -16,7 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 
 
@@ -96,23 +95,16 @@ public class SecuritySeedDataConfig {
     }
 
     private Role ensureRoleWithPermissions(String code, String name, String description, Set<Permission> permissions) {
-        Role role = roleRepository.findByCode(code)
+        return roleRepository.findByCode(code)
                 .orElseGet(() -> roleRepository.save(Role.builder()
                         .code(code)
                         .name(name)
                         .description(description)
                         .isSystem(true)
+                        .permissions(new HashSet<>(permissions))
                         .build()));
-
-        Set<Long> existingPermIds = role.getPermissions().stream()
-                .map(Permission::getPermissionId).collect(Collectors.toSet());
-        Set<Long> newPermIds = permissions.stream()
-                .map(Permission::getPermissionId).collect(Collectors.toSet());
-        if (!existingPermIds.equals(newPermIds)) {
-            role.setPermissions(new HashSet<>(permissions));
-            role = roleRepository.save(role);
-        }
-        return role;
+        // Permissions are only set on first creation.
+        // Subsequent changes via admin panel are intentionally preserved.
     }
 
     private void ensureDefaultAdminUser(Role adminRole, Role userRole) {
