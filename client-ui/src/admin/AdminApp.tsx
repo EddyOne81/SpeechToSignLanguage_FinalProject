@@ -23,6 +23,7 @@ interface AdminAppProps {
 
 export default function AdminApp({ authUser, onGoToApp, onLogout }: AdminAppProps) {
   const [activePage, setActivePage] = useState<AdminPage>("dashboard");
+  const theme = localStorage.getItem("s2s_theme") === "light" ? "light" : "dark";
 
   const renderPage = () => {
     switch (activePage) {
@@ -42,7 +43,7 @@ export default function AdminApp({ authUser, onGoToApp, onLogout }: AdminAppProp
   };
 
   return (
-    <div className="flex min-h-screen bg-neutral-950 text-neutral-100">
+    <div className={`flex h-screen overflow-hidden bg-neutral-950 text-neutral-100${theme === "light" ? " theme-light" : ""}`}>
       <AdminSidebar
         activePage={activePage}
         setActivePage={setActivePage}
@@ -50,7 +51,7 @@ export default function AdminApp({ authUser, onGoToApp, onLogout }: AdminAppProp
         onGoToApp={onGoToApp}
         onLogout={onLogout}
       />
-      <main className="flex-1 overflow-auto p-6">{renderPage()}</main>
+      <main className="flex-1 overflow-hidden p-6 flex flex-col">{renderPage()}</main>
     </div>
   );
 }

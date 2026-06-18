@@ -85,7 +85,7 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full gap-4">
       <div>
         <h1 className="text-xl font-bold text-neutral-100">User Management</h1>
         <p className="mt-1 text-sm text-neutral-500">{totalElements} users total</p>
@@ -95,8 +95,8 @@ export default function UsersPage() {
         <p className="rounded-md bg-rose-900/30 px-4 py-3 text-sm text-rose-400">{error}</p>
       )}
 
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
+        <div className="flex-1 overflow-y-auto overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-800">
@@ -207,7 +207,7 @@ export default function UsersPage() {
           </table>
         </div>
 
-        <div className="px-4 pb-3 pt-1">
+        <div className="shrink-0 px-4 pb-3 pt-1">
           <Pagination page={page} totalPages={totalPages} totalElements={totalElements} onPage={load} />
         </div>
       </div>

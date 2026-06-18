@@ -90,22 +90,23 @@ export default function HistoryTab({
         </div>
       </div>
 
+      <div className="mt-4 flex-1 min-h-0 overflow-y-auto">
       {!isLoggedIn ? (
-        <div className="mt-6 glass-inset rounded-xl p-4 text-sm text-slate-500">
+        <div className="glass-inset rounded-xl p-4 text-sm text-slate-500">
           Login to view your personal translation history.
         </div>
       ) : historyLoading ? (
-        <div className="mt-6 flex items-center gap-2 text-sm text-slate-400">
+        <div className="flex items-center gap-2 text-sm text-slate-400">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading histories...
         </div>
       ) : historyError ? (
-        <div className="mt-6 ui-alert-error flex items-center rounded-lg p-2 text-xs">
+        <div className="ui-alert-error flex items-center rounded-lg p-2 text-xs">
           <AlertCircle className="mr-2 h-4 w-4" />
           {historyError}
         </div>
       ) : historyItems.length > 0 ? (
-        <div className="mt-4 space-y-3 overflow-y-auto">
+        <div className="space-y-3">
           {historyItems.map((item) => (
             <div
               key={item.historyId}
@@ -151,12 +152,13 @@ export default function HistoryTab({
           ))}
         </div>
       ) : (
-        <p className="mt-6 text-sm text-slate-500">
+        <p className="text-sm text-slate-500">
           {historyQuery.trim()
             ? "No matching entries found."
             : "No history entries yet."}
         </p>
       )}
+      </div>
       {isLoggedIn && !historyError && (
         <div className="ui-divider-top mt-4 flex flex-wrap items-center justify-between gap-3 pt-3">
           <div className="text-xs text-slate-400">

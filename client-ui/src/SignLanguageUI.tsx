@@ -760,8 +760,8 @@ export default function SignLanguageUI({
 
   return (
     <div
-      className={`app-shell ${theme === "dark" ? "theme-dark" : "theme-light"} relative min-h-screen w-full overflow-x-hidden`}>
-      <div className={`relative z-10 flex w-full min-h-screen flex-col lg:flex-row${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>
+      className={`app-shell ${theme === "dark" ? "theme-dark" : "theme-light"} relative h-screen w-full overflow-hidden`}>
+      <div className={`relative z-10 flex w-full h-full flex-col lg:flex-row${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>
         <AppSidebar
           theme={theme}
           setTheme={setTheme}
@@ -775,7 +775,7 @@ export default function SignLanguageUI({
           setIsMobileOpen={setIsMobileSidebarOpen}
         />
 
-        <div className="app-content flex min-h-screen min-w-0 flex-1 flex-col">
+        <div className="app-content flex h-full min-w-0 flex-1 flex-col overflow-hidden">
           {isAdminMode && (
             <div className="flex items-center justify-between gap-3 bg-indigo-600 px-4 py-2 text-sm text-white">
               <span className="font-medium">Viewing as user (Admin mode)</span>

@@ -89,7 +89,7 @@ export default function App() {
   }
 
   return (
-    <div className="w-full min-h-screen">
+    <div className="w-full h-screen overflow-hidden">
       <SignLanguageUI
         onAuthChange={handleAuthChange}
         isAdminMode={isAdmin && adminViewMode === "app"}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle, Plus, Trash2, XCircle } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { adminFetch, unwrapPage } from "../utils";
 import Pagination from "../Pagination";
 
@@ -10,7 +10,6 @@ interface DictEntry {
   spokenLang?: string;
   signedLang?: string;
   cacheSource?: string;
-  isVerified?: boolean;
 }
 
 const SOURCE_BADGE: Record<string, string> = {
@@ -34,10 +33,8 @@ export default function DictionaryPage() {
     signedLang: "ase",
   });
   const [adding, setAdding] = useState(false);
-  const [toggling, setToggling] = useState<Record<number, boolean>>({});
   const [deleting, setDeleting] = useState<Record<number, boolean>>({});
   const [filterSource, setFilterSource] = useState("");
-  const [filterVerified, setFilterVerified] = useState("");
 
   const load = useCallback(
     async (p = 0) => {
@@ -46,7 +43,6 @@ export default function DictionaryPage() {
       try {
         const params = new URLSearchParams({ page: String(p), size: "15", sort: "wordId,desc" });
         if (filterSource) params.set("cacheSource", filterSource);
-        if (filterVerified !== "") params.set("isVerified", filterVerified);
         const res = await adminFetch(`/api/dictionaries?${params}`);
         const pg = unwrapPage(res);
         setEntries(pg.content);
@@ -59,7 +55,7 @@ export default function DictionaryPage() {
         setLoading(false);
       }
     },
-    [filterSource, filterVerified]
+    [filterSource]
   );
 
   useEffect(() => { void load(0); }, [load]);
@@ -83,21 +79,6 @@ export default function DictionaryPage() {
     }
   };
 
-  const handleVerifyToggle = async (entry: DictEntry) => {
-    setToggling((prev) => ({ ...prev, [entry.wordId]: true }));
-    try {
-      await adminFetch(`/api/dictionaries/${entry.wordId}`, {
-        method: "PUT",
-        body: JSON.stringify({ isVerified: !entry.isVerified }),
-      });
-      await load(page);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setToggling((prev) => ({ ...prev, [entry.wordId]: false }));
-    }
-  };
-
   const handleDelete = async (wordId: number) => {
     if (!window.confirm("Delete this dictionary entry?")) return;
     setDeleting((prev) => ({ ...prev, [wordId]: true }));
@@ -112,7 +93,7 @@ export default function DictionaryPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-neutral-100">Dictionary Management</h1>
@@ -137,15 +118,6 @@ export default function DictionaryPage() {
           <option value="SEED">SEED</option>
           <option value="AUTO_CACHED">AUTO_CACHED</option>
           <option value="MANUAL">MANUAL</option>
-        </select>
-        <select
-          value={filterVerified}
-          onChange={(e) => setFilterVerified(e.target.value)}
-          className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-sm text-neutral-300 focus:outline-none"
-        >
-          <option value="">All verified status</option>
-          <option value="true">Verified</option>
-          <option value="false">Unverified</option>
         </select>
       </div>
 
@@ -196,8 +168,8 @@ export default function DictionaryPage() {
         <p className="rounded-md bg-rose-900/30 px-4 py-3 text-sm text-rose-400">{error}</p>
       )}
 
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
+        <div className="flex-1 overflow-y-auto overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-800">
@@ -205,18 +177,17 @@ export default function DictionaryPage() {
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Text</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Type</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Source</th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Verified</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">Loading...</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">Loading...</td>
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">No entries found.</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">No entries found.</td>
                 </tr>
               ) : (
                 entries.map((e) => (
@@ -230,26 +201,6 @@ export default function DictionaryPage() {
                           {e.cacheSource}
                         </span>
                       ) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => void handleVerifyToggle(e)}
-                        disabled={toggling[e.wordId]}
-                        title={e.isVerified ? "Click to unverify" : "Click to verify"}
-                        className="flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors hover:bg-neutral-700 disabled:opacity-50"
-                      >
-                        {e.isVerified ? (
-                          <>
-                            <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                            <span className="text-emerald-400">Verified</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="h-3.5 w-3.5 text-neutral-500" />
-                            <span className="text-neutral-500">Unverified</span>
-                          </>
-                        )}
-                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -267,7 +218,7 @@ export default function DictionaryPage() {
           </table>
         </div>
 
-        <div className="px-4 pb-3 pt-1">
+        <div className="shrink-0 px-4 pb-3 pt-1">
           <Pagination page={page} totalPages={totalPages} totalElements={totalElements} onPage={load} />
         </div>
       </div>
