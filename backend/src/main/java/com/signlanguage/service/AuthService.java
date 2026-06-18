@@ -16,6 +16,7 @@ import com.signlanguage.repository.RoleRepository;
 import com.signlanguage.repository.UserSLRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -32,6 +33,9 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final EmailVerificationTokenRepository verificationTokenRepository;
+
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -53,15 +57,22 @@ public class AuthService {
                 .build();
 
         user.getRoles().add(defaultRole);
+
+        boolean smtpConfigured = mailUsername != null && !mailUsername.isBlank();
+        if (!smtpConfigured) {
+            user.setEmailVerified(true);
+        }
         userRepository.save(user);
 
-        sendVerificationEmail(user);
+        if (smtpConfigured) {
+            sendVerificationEmail(user);
+        }
 
         String primaryRole = extractPrimaryRole(user);
         return AuthResponse.builder()
                 .username(user.getUsername())
                 .role(primaryRole)
-                .emailVerified(false)
+                .emailVerified(user.isEmailVerified())
                 .build();
     }
 
