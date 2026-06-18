@@ -614,6 +614,7 @@ body,
 .app-shell.theme-light .text-white { color: #101c2d !important; }
 
 /* Admin panel light mode — separate scope via .admin-panel class */
+.admin-panel.theme-light { background-color: #f0f5fb !important; }
 .admin-panel.theme-light .bg-neutral-950 { background-color: #f0f5fb !important; }
 .admin-panel.theme-light .bg-neutral-900 { background-color: #ffffff !important; }
 .admin-panel.theme-light .bg-neutral-800 { background-color: #f1f5fe !important; }
