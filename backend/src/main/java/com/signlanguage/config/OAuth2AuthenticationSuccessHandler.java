@@ -89,7 +89,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         if (session != null) {
             session.invalidate();
         }
-        response.sendRedirect(frontendUrl + "/");
+        response.sendRedirect(frontendUrl + "/?oauth_token=" + jwt);
     }
 
     private String sanitizeUsername(String raw) {

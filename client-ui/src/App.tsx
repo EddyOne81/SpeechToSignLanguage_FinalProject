@@ -36,7 +36,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    fetch(`${BACKEND_BASE_URL}/api/auth/me`, { credentials: "include" })
+    const params = new URLSearchParams(window.location.search);
+    const oauthToken = params.get("oauth_token");
+    if (oauthToken) {
+      params.delete("oauth_token");
+      const newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+      window.history.replaceState({}, "", newUrl);
+    }
+
+    const headers: HeadersInit = oauthToken
+      ? { Authorization: `Bearer ${oauthToken}` }
+      : {};
+
+    fetch(`${BACKEND_BASE_URL}/api/auth/me`, { credentials: "include", headers })
       .then((r) => (r.ok ? r.json() : null))
       .then((body) => {
         if (body?.data?.username) {
