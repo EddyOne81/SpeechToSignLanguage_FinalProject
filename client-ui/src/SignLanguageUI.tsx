@@ -83,6 +83,7 @@ export default function SignLanguageUI({
 
   const [transcript, setTranscript] = useState<string>("");
   const [poseBuffer, setPoseBuffer] = useState<PoseBuffer | null>(null);
+  const prevBlobUrlRef = useRef<string | null>(null);
 
   const [dictQuery, setDictQuery] = useState("");
   const [dictItems, setDictItems] = useState<DictionaryItem[]>([]);
@@ -262,7 +263,7 @@ export default function SignLanguageUI({
     }
   };
 
-  const applyTranslationResult = (data: any) => {
+  const applyTranslationResult = async (data: any) => {
     const {
       recognized_text_en,
       pose_coordinates,
@@ -271,32 +272,46 @@ export default function SignLanguageUI({
       offline_mode,
     } = data;
 
-    const offline = offline_mode === true || (!pose_source_url && (!pose_coordinates || pose_coordinates.length === 0));
-    setIsOfflineMode(offline);
     setTranscript(recognized_text_en);
+    console.log(`[System] Received ${pose_coordinates?.length ?? 0} JSON animation frames.`);
 
-    if (!offline) {
-      // Strip the absolute origin so the pose-viewer web component fetches through
-      // the Vite proxy instead of going directly to http://127.0.0.1:8080, which
-      // would be blocked by CORS (the web component bypasses our fetch wrapper).
-      const poseUrl = (() => {
-        if (!pose_source_url) return pose_source_url;
-        try {
-          const { pathname, search } = new URL(pose_source_url);
-          return pathname + search;
-        } catch {
-          return pose_source_url;
-        }
-      })();
-      setPoseBuffer({
-        frames: pose_coordinates,
-        fps,
-        sourceUrl: poseUrl,
-      });
-      console.log(`[System] Received ${pose_coordinates.length} JSON animation frames.`);
-    } else {
+    const hasData = pose_source_url && pose_coordinates?.length > 0;
+    if (offline_mode === true || !hasData) {
+      setIsOfflineMode(true);
       setPoseBuffer(null);
-      console.warn("[System] Offline mode: Sign-MT cloud unavailable, animation not available.");
+      console.warn("[System] Offline mode: animation not available.");
+      return;
+    }
+
+    // Resolve to a relative URL so the fetch goes through the same origin/proxy
+    const poseRelativeUrl = (() => {
+      try {
+        const { pathname, search } = new URL(pose_source_url);
+        return pathname + search;
+      } catch {
+        return pose_source_url as string;
+      }
+    })();
+
+    // Pre-fetch the binary .pose file in JS so we can handle errors gracefully.
+    // On success, create a Blob URL — the web component never sees a failing URL.
+    // On failure, fall back to offline mode with a clear message.
+    try {
+      const res = await fetch(poseRelativeUrl);
+      if (!res.ok) throw new Error(`${res.status}`);
+      const blob = await res.blob();
+      // Revoke previous blob URL to avoid memory leak
+      if (prevBlobUrlRef.current) {
+        URL.revokeObjectURL(prevBlobUrlRef.current);
+      }
+      const blobUrl = URL.createObjectURL(blob);
+      prevBlobUrlRef.current = blobUrl;
+      setIsOfflineMode(false);
+      setPoseBuffer({ frames: pose_coordinates, fps, sourceUrl: blobUrl });
+    } catch {
+      console.warn("[System] Pose binary unavailable for this phrase — animation disabled.");
+      setIsOfflineMode(true);
+      setPoseBuffer(null);
     }
   };
 
@@ -724,7 +739,7 @@ export default function SignLanguageUI({
         throw new Error("Unexpected response payload from backend.");
       }
 
-      applyTranslationResult(payload);
+      await applyTranslationResult(payload);
       void loadHistories(0);
     } catch (err: any) {
       console.error(err);
@@ -771,7 +786,7 @@ export default function SignLanguageUI({
         throw new Error("Unexpected response payload from backend.");
       }
 
-      applyTranslationResult(payload);
+      await applyTranslationResult(payload);
       void loadHistories(0);
     } catch (err: any) {
       console.error(err);
