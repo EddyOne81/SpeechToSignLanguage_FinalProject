@@ -5,7 +5,6 @@ import com.signlanguage.entity.UserSignLanguage;
 import com.signlanguage.repository.RoleRepository;
 import com.signlanguage.repository.UserSLRepository;
 import com.signlanguage.service.JwtService;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletResponse;
@@ -77,12 +76,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         String jwt = jwtService.generateToken(user.getUsername(), primaryRole);
 
-        Cookie cookie = new Cookie("s2s_jwt", jwt);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(86400);
-        response.addCookie(cookie);
+        response.addHeader("Set-Cookie",
+            "s2s_jwt=" + jwt + "; Path=/; Max-Age=86400; HttpOnly; Secure; SameSite=None");
 
         clearAuthenticationAttributes(request);
         HttpSession session = request.getSession(false);

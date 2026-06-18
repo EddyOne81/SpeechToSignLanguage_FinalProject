@@ -15,7 +15,6 @@ import com.signlanguage.dto.RegisterRequest;
 import com.signlanguage.exception.ApiResponses;
 import com.signlanguage.service.AuthService;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -51,12 +50,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        Cookie cookie = new Cookie("s2s_jwt", "");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        response.addHeader("Set-Cookie", "s2s_jwt=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None");
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
@@ -98,11 +92,7 @@ public class AuthController {
     }
 
     private void setJwtCookie(HttpServletResponse response, String jwt) {
-        Cookie cookie = new Cookie("s2s_jwt", jwt);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(86400);
-        response.addCookie(cookie);
+        response.addHeader("Set-Cookie",
+            "s2s_jwt=" + jwt + "; Path=/; Max-Age=86400; HttpOnly; Secure; SameSite=None");
     }
 }
