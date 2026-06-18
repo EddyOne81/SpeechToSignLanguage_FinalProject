@@ -1,5 +1,6 @@
 package com.signlanguage.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.signlanguage.entity.DictionaryCacheSource;
 import com.signlanguage.entity.DictionaryEntryType;
 import com.signlanguage.entity.SignDictionary;
@@ -37,6 +38,7 @@ public class TranslationGatewayService {
     private final WebClient aiWebClient;
     private final TranslationHistoryService translationHistoryService;
     private final SignDictionaryRepository dictionaryRepository;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.public-base-url:http://127.0.0.1:8080}")
     private String appPublicBaseUrl;
@@ -320,11 +322,24 @@ public class TranslationGatewayService {
     ) {
         String poseSourceUrl = buildProxyPoseUrl(text, spokenLang, signedLang);
 
+        Object cachedCoords = Collections.emptyList();
+        int cachedFps = DEFAULT_CACHE_FPS;
+        if (dictionary.getPoseCoordsJson() != null) {
+            try {
+                cachedCoords = objectMapper.readValue(dictionary.getPoseCoordsJson(), Object.class);
+            } catch (Exception ex) {
+                cachedCoords = Collections.emptyList();
+            }
+        }
+        if (dictionary.getPoseFps() != null) {
+            cachedFps = dictionary.getPoseFps();
+        }
+
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("recognized_text_en", text);
-        payload.put("pose_coordinates", Collections.emptyList());
+        payload.put("pose_coordinates", cachedCoords);
         payload.put("pose_source_url", poseSourceUrl);
-        payload.put("fps", DEFAULT_CACHE_FPS);
+        payload.put("fps", cachedFps);
 
         Map<String, Object> ruleDebug = new LinkedHashMap<>();
         ruleDebug.put("source", source);
@@ -353,6 +368,22 @@ public class TranslationGatewayService {
         if (!shouldAutoCache(normalizedText, entryType)) {
             return;
         }
+
+        // Grab pose_coordinates from the AI payload — already returned, no extra call needed.
+        Object coordsObj = payload.get("pose_coordinates");
+        if (coordsObj == null) {
+            return;
+        }
+        String coordsJson;
+        try {
+            coordsJson = objectMapper.writeValueAsString(coordsObj);
+        } catch (Exception ex) {
+            return;
+        }
+
+        Object fpsObj = payload.get("fps");
+        int fpsi = fpsObj instanceof Number n ? n.intValue() : DEFAULT_CACHE_FPS;
+
         Optional<SignDictionary> existing = dictionaryRepository
                 .findFirstByNormalizedTextAndEntryTypeAndSpokenLangAndSignedLang(
                         normalizedText,
@@ -362,24 +393,22 @@ public class TranslationGatewayService {
                 );
 
         if (existing.isPresent()) {
+            // Back-fill coords for entries created before this feature was added.
+            SignDictionary entry = existing.get();
+            if (entry.getPoseCoordsJson() != null) {
+                return;
+            }
+            entry.setPoseCoordsJson(coordsJson);
+            entry.setPoseFps(fpsi);
+            try {
+                dictionaryRepository.save(entry);
+            } catch (Exception ex) {
+                // Non-critical — ignore.
+            }
             return;
         }
 
         if (dictionaryRepository.existsByEnglishTextIgnoreCase(cleanText)) {
-            return;
-        }
-
-        byte[] poseBytes;
-        try {
-            poseBytes = fetchPoseBytesFromAi(cleanText, spokenLang, signedLang);
-        } catch (RuntimeException ex) {
-            return;
-        }
-
-        Path posePath;
-        try {
-            posePath = savePoseFile(normalizedText, spokenLang, signedLang, poseBytes);
-        } catch (IOException ex) {
             return;
         }
 
@@ -390,7 +419,8 @@ public class TranslationGatewayService {
                 .spokenLang(spokenLang)
                 .signedLang(signedLang)
                 .cacheSource(DictionaryCacheSource.AUTO_CACHED)
-                .poseFilePath(posePath.toString())
+                .poseCoordsJson(coordsJson)
+                .poseFps(fpsi)
                 .isVerified(false)
                 .build();
 

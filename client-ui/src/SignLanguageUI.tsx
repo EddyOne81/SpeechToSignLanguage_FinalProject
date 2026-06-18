@@ -83,7 +83,6 @@ export default function SignLanguageUI({
 
   const [transcript, setTranscript] = useState<string>("");
   const [poseBuffer, setPoseBuffer] = useState<PoseBuffer | null>(null);
-  const prevBlobUrlRef = useRef<string | null>(null);
 
   const [dictQuery, setDictQuery] = useState("");
   const [dictItems, setDictItems] = useState<DictionaryItem[]>([]);
@@ -264,55 +263,19 @@ export default function SignLanguageUI({
   };
 
   const applyTranslationResult = async (data: any) => {
-    const {
-      recognized_text_en,
-      pose_coordinates,
-      pose_source_url,
-      fps,
-      offline_mode,
-    } = data;
+    const { recognized_text_en, pose_coordinates, fps, offline_mode } = data;
 
     setTranscript(recognized_text_en);
-    console.log(`[System] Received ${pose_coordinates?.length ?? 0} JSON animation frames.`);
 
-    const hasData = pose_source_url && pose_coordinates?.length > 0;
-    if (offline_mode === true || !hasData) {
+    const hasFrames = Array.isArray(pose_coordinates) && pose_coordinates.length > 0;
+    if (offline_mode === true || !hasFrames) {
       setIsOfflineMode(true);
       setPoseBuffer(null);
-      console.warn("[System] Offline mode: animation not available.");
       return;
     }
 
-    // Resolve to a relative URL so the fetch goes through the same origin/proxy
-    const poseRelativeUrl = (() => {
-      try {
-        const { pathname, search } = new URL(pose_source_url);
-        return pathname + search;
-      } catch {
-        return pose_source_url as string;
-      }
-    })();
-
-    // Pre-fetch the binary .pose file in JS so we can handle errors gracefully.
-    // On success, create a Blob URL — the web component never sees a failing URL.
-    // On failure, fall back to offline mode with a clear message.
-    try {
-      const res = await fetch(poseRelativeUrl);
-      if (!res.ok) throw new Error(`${res.status}`);
-      const blob = await res.blob();
-      // Revoke previous blob URL to avoid memory leak
-      if (prevBlobUrlRef.current) {
-        URL.revokeObjectURL(prevBlobUrlRef.current);
-      }
-      const blobUrl = URL.createObjectURL(blob);
-      prevBlobUrlRef.current = blobUrl;
-      setIsOfflineMode(false);
-      setPoseBuffer({ frames: pose_coordinates, fps, sourceUrl: blobUrl });
-    } catch {
-      console.warn("[System] Pose binary unavailable for this phrase — animation disabled.");
-      setIsOfflineMode(true);
-      setPoseBuffer(null);
-    }
+    setIsOfflineMode(false);
+    setPoseBuffer({ frames: pose_coordinates, fps: fps ?? 25 });
   };
 
   const apiRequest = async (path: string, options: RequestInit = {}) => {

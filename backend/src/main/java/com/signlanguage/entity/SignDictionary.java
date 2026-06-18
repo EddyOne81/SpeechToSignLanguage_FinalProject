@@ -33,6 +33,12 @@ public class SignDictionary {
 
     private String poseFilePath;
 
+    @Column(name = "pose_coords_json", columnDefinition = "text")
+    private String poseCoordsJson;
+
+    @Column(name = "pose_fps")
+    private Integer poseFps;
+
     private Boolean isVerified;
 
     @ManyToOne(fetch = FetchType.LAZY)
