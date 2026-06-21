@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 
@@ -68,7 +67,7 @@ public class SecuritySeedDataConfig {
                     "ROLE_ADMIN",
                     "Admin",
                     "Administrator role",
-                    new HashSet<>(List.of(
+                    Set.of(
                             userProfileRead,
                             userProfileUpdate,
                             translateExecute,
@@ -77,7 +76,7 @@ public class SecuritySeedDataConfig {
                             dictionaryRead,
                             dictionaryWrite,
                             feedbackWrite
-                    ))
+                    )
             );
 
             ensureDefaultAdminUser(adminRole, userRole);
