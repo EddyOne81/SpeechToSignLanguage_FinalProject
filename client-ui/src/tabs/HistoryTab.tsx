@@ -2,6 +2,13 @@ import React from "react";
 import { AlertCircle, Loader2, RefreshCw, Search, Trash2 } from "lucide-react";
 import { formatDate } from "../utils/format";
 import type { FeedbackFormData, HistoryItem, TabType } from "../types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface HistoryTabProps {
   isLoggedIn: boolean;
@@ -170,27 +177,33 @@ export default function HistoryTab({
               <button
                 onClick={() => void loadHistories(0)}
                 disabled={historyLoading}
-                className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                 First
               </button>
             )}
             <button
               onClick={() => void loadHistories(Math.max(0, historyPage - 1))}
               disabled={historyLoading || historyPage <= 0}
-              className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+              className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
               Prev
             </button>
-            <select
-              value={historyTotalPages > 0 ? historyPage : 0}
-              onChange={(event) => void loadHistories(Number(event.target.value))}
+            <Select
+              variant="ui"
+              value={String(historyTotalPages > 0 ? historyPage : 0)}
+              onValueChange={(v) => void loadHistories(Number(v))}
               disabled={historyLoading || historyTotalPages <= 0}
-              className="ui-input rounded-md px-2 py-1.5 text-xs">
-              {Array.from({ length: historyTotalPages || 1 }, (_, idx) => (
-                <option key={idx} value={idx}>
-                  Page {idx + 1}
-                </option>
-              ))}
-            </select>
+            >
+              <SelectTrigger className="w-28 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: historyTotalPages || 1 }, (_, idx) => (
+                  <SelectItem key={idx} value={String(idx)}>
+                    Page {idx + 1}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <button
               onClick={() =>
                 void loadHistories(
@@ -205,7 +218,7 @@ export default function HistoryTab({
                 historyTotalPages <= 0 ||
                 historyPage >= historyTotalPages - 1
               }
-              className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+              className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
               Next
             </button>
             {historyTotalPages > 1 && historyPage < historyTotalPages - 1 && (
@@ -214,7 +227,7 @@ export default function HistoryTab({
                   void loadHistories(Math.max(historyTotalPages - 1, 0))
                 }
                 disabled={historyLoading}
-                className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                 Last
               </button>
             )}

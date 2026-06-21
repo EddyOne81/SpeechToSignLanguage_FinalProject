@@ -2,6 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { adminFetch, unwrapPage } from "../utils";
 import Pagination from "../Pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DictEntry {
   wordId: number;
@@ -17,6 +24,13 @@ const SOURCE_BADGE: Record<string, string> = {
   AUTO_CACHED: "bg-sky-500/20 text-sky-300",
   MANUAL: "bg-emerald-500/20 text-emerald-300",
 };
+
+const SORT_OPTIONS = [
+  { value: "wordId,desc", label: "Newest first" },
+  { value: "wordId,asc", label: "Oldest first" },
+  { value: "englishText,asc", label: "A → Z" },
+  { value: "englishText,desc", label: "Z → A" },
+];
 
 export default function DictionaryPage() {
   const [entries, setEntries] = useState<DictEntry[]>([]);
@@ -34,15 +48,16 @@ export default function DictionaryPage() {
   });
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState<Record<number, boolean>>({});
-  const [filterSource, setFilterSource] = useState("");
+  const [filterSource, setFilterSource] = useState("ALL");
+  const [sort, setSort] = useState("wordId,desc");
 
   const load = useCallback(
     async (p = 0) => {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({ page: String(p), size: "15", sort: "wordId,desc" });
-        if (filterSource) params.set("cacheSource", filterSource);
+        const params = new URLSearchParams({ page: String(p), size: "15", sort });
+        if (filterSource !== "ALL") params.set("cacheSource", filterSource);
         const res = await adminFetch(`/api/dictionaries?${params}`);
         const pg = unwrapPage(res);
         setEntries(pg.content);
@@ -55,7 +70,7 @@ export default function DictionaryPage() {
         setLoading(false);
       }
     },
-    [filterSource]
+    [filterSource, sort]
   );
 
   useEffect(() => { void load(0); }, [load]);
@@ -108,17 +123,29 @@ export default function DictionaryPage() {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <select
-          value={filterSource}
-          onChange={(e) => setFilterSource(e.target.value)}
-          className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-sm text-neutral-300 focus:outline-none"
-        >
-          <option value="">All sources</option>
-          <option value="SEED">SEED</option>
-          <option value="AUTO_CACHED">AUTO_CACHED</option>
-          <option value="MANUAL">MANUAL</option>
-        </select>
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={filterSource} onValueChange={setFilterSource}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All sources" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All sources</SelectItem>
+            <SelectItem value="SEED">SEED</SelectItem>
+            <SelectItem value="AUTO_CACHED">AUTO_CACHED</SelectItem>
+            <SelectItem value="MANUAL">MANUAL</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {showAdd && (
@@ -131,14 +158,18 @@ export default function DictionaryPage() {
               placeholder="English text"
               className="sm:col-span-2 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:border-indigo-500 focus:outline-none"
             />
-            <select
+            <Select
               value={addForm.entryType}
-              onChange={(e) => setAddForm((f) => ({ ...f, entryType: e.target.value }))}
-              className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-300 focus:outline-none"
+              onValueChange={(v) => setAddForm((f) => ({ ...f, entryType: v }))}
             >
-              <option value="GLOSS">GLOSS</option>
-              <option value="PHRASE">PHRASE</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="GLOSS">GLOSS</SelectItem>
+                <SelectItem value="PHRASE">PHRASE</SelectItem>
+              </SelectContent>
+            </Select>
             <input
               value={addForm.spokenLang}
               onChange={(e) => setAddForm((f) => ({ ...f, spokenLang: e.target.value }))}

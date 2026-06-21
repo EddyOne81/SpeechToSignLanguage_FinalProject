@@ -26,7 +26,9 @@ function PermissionGrid({
   onToggle: (code: string) => void;
 }) {
   if (permissions.length === 0)
-    return <p className="text-xs text-neutral-500">No permissions available.</p>;
+    return (
+      <p className="text-xs text-neutral-500">No permissions available.</p>
+    );
   return (
     <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
       {permissions.map((p) => {
@@ -38,17 +40,22 @@ function PermissionGrid({
               checked
                 ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-200"
                 : "border-neutral-700 bg-neutral-800/50 text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
-            }`}
-          >
+            }`}>
             <div
               className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                checked ? "border-indigo-400 bg-indigo-500" : "border-neutral-600"
-              }`}
-            >
+                checked
+                  ? "border-indigo-400 bg-indigo-500"
+                  : "border-neutral-600"
+              }`}>
               {checked && <Check className="h-2.5 w-2.5 text-white" />}
             </div>
-            <input type="checkbox" checked={checked} onChange={() => onToggle(p.code)} className="sr-only" />
-            <span className="truncate font-mono text-xs">{p.code}</span>
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={() => onToggle(p.code)}
+              className="sr-only"
+            />
+            <span className="truncate text-xs">{p.name}</span>
           </label>
         );
       })}
@@ -209,7 +216,9 @@ export default function RolesPage() {
     if (!window.confirm("Delete this permission?")) return;
     setError(null);
     try {
-      await adminFetch(`/api/permissions/${permissionId}`, { method: "DELETE" });
+      await adminFetch(`/api/permissions/${permissionId}`, {
+        method: "DELETE",
+      });
       await loadPermissions();
     } catch (err: any) {
       setError(err.message);
@@ -219,12 +228,18 @@ export default function RolesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-neutral-100">Roles & Permissions</h1>
-        <p className="mt-1 text-sm text-neutral-500">Manage system access control</p>
+        <h1 className="text-xl font-bold text-neutral-100">
+          Roles & Permissions
+        </h1>
+        <p className="mt-1 text-sm text-neutral-500">
+          Manage system access control
+        </p>
       </div>
 
       {error && (
-        <p className="rounded-md bg-rose-900/30 px-4 py-3 text-sm text-rose-400">{error}</p>
+        <p className="rounded-md bg-rose-900/30 px-4 py-3 text-sm text-rose-400">
+          {error}
+        </p>
       )}
 
       <div className="flex gap-0 border-b border-neutral-800">
@@ -236,8 +251,7 @@ export default function RolesPage() {
               tab === t
                 ? "border-indigo-500 text-indigo-400"
                 : "border-transparent text-neutral-400 hover:text-neutral-200"
-            }`}
-          >
+            }`}>
             {t === "roles" ? "Roles" : "Permissions"}
           </button>
         ))}
@@ -247,14 +261,19 @@ export default function RolesPage() {
         <div className="py-8 text-center text-neutral-500">Loading...</div>
       ) : tab === "roles" ? (
         <div className="space-y-3">
-
           {/* Toolbar */}
           <div className="flex justify-end">
             <button
-              onClick={() => { setShowCreate((v) => !v); setEditingRole(null); }}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 transition-colors"
-            >
-              {showCreate ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              onClick={() => {
+                setShowCreate((v) => !v);
+                setEditingRole(null);
+              }}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 transition-colors">
+              {showCreate ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
               {showCreate ? "Cancel" : "New Role"}
             </button>
           </div>
@@ -264,11 +283,15 @@ export default function RolesPage() {
             <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/40 p-4 space-y-4">
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-indigo-400" />
-                <span className="text-sm font-semibold text-indigo-300">New Role</span>
+                <span className="text-sm font-semibold text-indigo-300">
+                  New Role
+                </span>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-neutral-400">Role Code</label>
+                <label className="text-xs font-medium text-neutral-400">
+                  Role Name
+                </label>
                 <input
                   value={newRoleCode}
                   onChange={(e) => setNewRoleCode(e.target.value)}
@@ -283,12 +306,20 @@ export default function RolesPage() {
                   <label className="text-xs font-medium text-neutral-400">
                     Permissions
                     <span className="ml-1.5 text-rose-400">*</span>
-                    <span className="ml-2 text-neutral-600">({createPerms.size} selected)</span>
+                    <span className="ml-2 text-neutral-600">
+                      ({createPerms.size} selected)
+                    </span>
                   </label>
                 </div>
-                <PermissionGrid permissions={permissions} selected={createPerms} onToggle={toggleCreatePerm} />
+                <PermissionGrid
+                  permissions={permissions}
+                  selected={createPerms}
+                  onToggle={toggleCreatePerm}
+                />
                 {createPerms.size === 0 && (
-                  <p className="text-xs text-rose-400">At least 1 permission is required.</p>
+                  <p className="text-xs text-rose-400">
+                    At least 1 permission is required.
+                  </p>
                 )}
               </div>
 
@@ -298,19 +329,21 @@ export default function RolesPage() {
                     onClick={() => setCreateIsSystem((v) => !v)}
                     className={`relative h-5 w-9 rounded-full transition-colors ${
                       createIsSystem ? "bg-indigo-600" : "bg-neutral-700"
-                    }`}
-                  >
-                    <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                      createIsSystem ? "translate-x-4" : "translate-x-0.5"
-                    }`} />
+                    }`}>
+                    <div
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                        createIsSystem ? "translate-x-4" : "translate-x-0.5"
+                      }`}
+                    />
                   </div>
                   System role (cannot be deleted)
                 </label>
                 <button
                   onClick={() => void createRole()}
-                  disabled={saving || !newRoleCode.trim() || createPerms.size === 0}
-                  className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
-                >
+                  disabled={
+                    saving || !newRoleCode.trim() || createPerms.size === 0
+                  }
+                  className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors">
                   {saving ? "Creating…" : "Create Role"}
                 </button>
               </div>
@@ -324,13 +357,15 @@ export default function RolesPage() {
                 <div className="flex items-center gap-2">
                   <Pencil className="h-4 w-4 text-amber-400" />
                   <span className="text-sm font-semibold text-amber-300">
-                    Edit <span className="font-mono text-amber-200">{editingRole.code}</span>
+                    Edit{" "}
+                    <span className="font-mono text-amber-200">
+                      {editingRole.name}
+                    </span>
                   </span>
                 </div>
                 <button
                   onClick={() => setEditingRole(null)}
-                  className="rounded p-1 text-neutral-500 hover:text-neutral-200 transition-colors"
-                >
+                  className="rounded p-1 text-neutral-500 hover:text-neutral-200 transition-colors">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -340,12 +375,20 @@ export default function RolesPage() {
                   <label className="text-xs font-medium text-neutral-400">
                     Permissions
                     <span className="ml-1.5 text-rose-400">*</span>
-                    <span className="ml-2 text-neutral-600">({editPerms.size} selected)</span>
+                    <span className="ml-2 text-neutral-600">
+                      ({editPerms.size} selected)
+                    </span>
                   </label>
                 </div>
-                <PermissionGrid permissions={permissions} selected={editPerms} onToggle={toggleEditPerm} />
+                <PermissionGrid
+                  permissions={permissions}
+                  selected={editPerms}
+                  onToggle={toggleEditPerm}
+                />
                 {editPerms.size === 0 && (
-                  <p className="text-xs text-rose-400">At least 1 permission is required.</p>
+                  <p className="text-xs text-rose-400">
+                    At least 1 permission is required.
+                  </p>
                 )}
               </div>
 
@@ -355,19 +398,19 @@ export default function RolesPage() {
                     onClick={() => setEditIsSystem((v) => !v)}
                     className={`relative h-5 w-9 rounded-full transition-colors ${
                       editIsSystem ? "bg-indigo-600" : "bg-neutral-700"
-                    }`}
-                  >
-                    <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                      editIsSystem ? "translate-x-4" : "translate-x-0.5"
-                    }`} />
+                    }`}>
+                    <div
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                        editIsSystem ? "translate-x-4" : "translate-x-0.5"
+                      }`}
+                    />
                   </div>
                   System role (cannot be deleted)
                 </label>
                 <button
                   onClick={() => void saveEdit()}
                   disabled={editing || editPerms.size === 0}
-                  className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-500 disabled:opacity-50 transition-colors"
-                >
+                  className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-500 disabled:opacity-50 transition-colors">
                   {editing ? "Saving…" : "Save Changes"}
                 </button>
               </div>
@@ -379,35 +422,53 @@ export default function RolesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-800">
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">ID</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Code</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Permissions</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Type</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
+                    ID
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
+                    Permissions
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
+                    Type
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {roles.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">No roles found.</td>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-8 text-center text-neutral-500">
+                      No roles found.
+                    </td>
                   </tr>
                 ) : (
                   roles.map((r) => (
                     <tr
                       key={r.roleId}
                       className={`border-b border-neutral-800/60 hover:bg-neutral-800/30 ${
-                        editingRole?.roleId === r.roleId ? "bg-amber-950/20" : ""
-                      }`}
-                    >
-                      <td className="px-4 py-3 font-mono text-xs text-neutral-500">{r.roleId}</td>
+                        editingRole?.roleId === r.roleId
+                          ? "bg-amber-950/20"
+                          : ""
+                      }`}>
+                      <td className="px-4 py-3 font-mono text-xs text-neutral-500">
+                        {r.roleId}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="rounded-full bg-indigo-500/20 px-2.5 py-0.5 text-xs font-medium text-indigo-300">
-                          {r.code}
+                          {r.name}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs text-neutral-500">
-                          {r.permissions?.length ?? 0} permission{(r.permissions?.length ?? 0) !== 1 ? "s" : ""}
+                          {r.permissions?.length ?? 0} permission
+                          {(r.permissions?.length ?? 0) !== 1 ? "s" : ""}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -426,16 +487,14 @@ export default function RolesPage() {
                           <button
                             onClick={() => openEdit(r)}
                             className="rounded p-1.5 text-neutral-400 hover:bg-neutral-700/50 hover:text-neutral-200 transition-colors"
-                            title="Edit permissions"
-                          >
+                            title="Edit permissions">
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           {!r.isSystem && (
                             <button
                               onClick={() => void deleteRole(r.roleId)}
                               className="rounded p-1.5 text-rose-400 hover:bg-rose-900/30 hover:text-rose-300 transition-colors"
-                              title="Delete role"
-                            >
+                              title="Delete role">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -461,8 +520,7 @@ export default function RolesPage() {
             <button
               onClick={() => void createPermission()}
               disabled={saving || !newPermName.trim()}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
-            >
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors">
               <Plus className="h-4 w-4" />
               Add Permission
             </button>
@@ -472,26 +530,41 @@ export default function RolesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-800">
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">ID</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Code</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
+                    ID
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {permissions.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-neutral-500">No permissions found.</td>
+                    <td
+                      colSpan={3}
+                      className="px-4 py-8 text-center text-neutral-500">
+                      No permissions found.
+                    </td>
                   </tr>
                 ) : (
                   permissions.map((p) => (
-                    <tr key={p.permissionId} className="border-b border-neutral-800/60 hover:bg-neutral-800/30">
-                      <td className="px-4 py-3 font-mono text-xs text-neutral-500">{p.permissionId}</td>
-                      <td className="px-4 py-3 text-neutral-300 font-mono text-xs">{p.code}</td>
+                    <tr
+                      key={p.permissionId}
+                      className="border-b border-neutral-800/60 hover:bg-neutral-800/30">
+                      <td className="px-4 py-3 font-mono text-xs text-neutral-500">
+                        {p.permissionId}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-300 text-sm">
+                        {p.name}
+                      </td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => void deletePermission(p.permissionId)}
-                          className="rounded p-1.5 text-rose-400 hover:bg-rose-900/30 hover:text-rose-300 transition-colors"
-                        >
+                          className="rounded p-1.5 text-rose-400 hover:bg-rose-900/30 hover:text-rose-300 transition-colors">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>

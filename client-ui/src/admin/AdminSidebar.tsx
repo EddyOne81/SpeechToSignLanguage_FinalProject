@@ -9,6 +9,7 @@ import {
   Shield,
   ShieldCheck,
   Sun,
+  X,
   type LucideIcon,
   Users,
 } from "lucide-react";
@@ -31,6 +32,8 @@ interface AdminSidebarProps {
   onToggleTheme: () => void;
   onGoToApp: () => void;
   onLogout: () => void;
+  isMobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
 export default function AdminSidebar({
@@ -41,19 +44,39 @@ export default function AdminSidebar({
   onToggleTheme,
   onGoToApp,
   onLogout,
+  isMobileOpen,
+  onMobileClose,
 }: AdminSidebarProps) {
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-neutral-800 bg-neutral-900">
-      <div className="flex items-center gap-2.5 border-b border-neutral-800 px-5 py-4">
-        <ShieldCheck className="h-5 w-5 shrink-0 text-indigo-400" />
-        <span className="text-sm font-bold tracking-tight text-neutral-100">Admin Panel</span>
+    <aside
+      className={[
+        "flex w-60 shrink-0 flex-col border-r border-neutral-800 bg-neutral-900",
+        "fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out",
+        "lg:relative lg:translate-x-0 lg:transition-none",
+        isMobileOpen ? "translate-x-0" : "-translate-x-full",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-4">
+        <div className="flex items-center gap-2.5">
+          <ShieldCheck className="h-5 w-5 shrink-0 text-indigo-400" />
+          <span className="text-sm font-bold tracking-tight text-neutral-100">Admin Panel</span>
+        </div>
+        <button
+          onClick={onMobileClose}
+          className="rounded-md p-1 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200 lg:hidden"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
       <nav className="flex-1 space-y-0.5 p-2 pt-3">
         {NAV_ITEMS.map(({ page, label, icon: Icon }) => (
           <button
             key={page}
-            onClick={() => setActivePage(page)}
+            onClick={() => {
+              setActivePage(page);
+              onMobileClose();
+            }}
             className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors ${
               activePage === page
                 ? "bg-indigo-600 text-white"

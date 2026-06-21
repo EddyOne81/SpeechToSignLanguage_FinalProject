@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminFetch, unwrapPage } from "../utils";
 import Pagination from "../Pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface HistoryEntry {
   historyId: number;
@@ -11,6 +18,13 @@ interface HistoryEntry {
   createdAt?: string;
 }
 
+const SORT_OPTIONS = [
+  { value: "createdAt,desc", label: "Newest first" },
+  { value: "createdAt,asc", label: "Oldest first" },
+  { value: "inputText,asc", label: "A → Z" },
+  { value: "inputText,desc", label: "Z → A" },
+];
+
 export default function HistoriesPage() {
   const [histories, setHistories] = useState<HistoryEntry[]>([]);
   const [page, setPage] = useState(0);
@@ -18,6 +32,7 @@ export default function HistoriesPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState("createdAt,desc");
 
   const load = useCallback(
     async (p = 0) => {
@@ -25,7 +40,7 @@ export default function HistoriesPage() {
       setError(null);
       try {
         const res = await adminFetch(
-          `/api/histories?page=${p}&size=20&sort=createdAt,desc`
+          `/api/histories?page=${p}&size=20&sort=${sort}`
         );
         const pg = unwrapPage(res);
         setHistories(pg.content);
@@ -38,16 +53,28 @@ export default function HistoriesPage() {
         setLoading(false);
       }
     },
-    []
+    [sort]
   );
 
   useEffect(() => { void load(0); }, [load]);
 
   return (
     <div className="flex flex-col h-full gap-4">
-      <div>
-        <h1 className="text-xl font-bold text-neutral-100">All Histories</h1>
-        <p className="mt-1 text-sm text-neutral-500">{totalElements} translation records total</p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-neutral-100">All Histories</h1>
+          <p className="mt-1 text-sm text-neutral-500">{totalElements} translation records total</p>
+        </div>
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {error && (

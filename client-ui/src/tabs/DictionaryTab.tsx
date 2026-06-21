@@ -1,5 +1,12 @@
 import { AlertCircle, Loader2, RefreshCw, Search } from "lucide-react";
 import type { DictionaryItem, TabType } from "../types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DictionaryTabProps {
   dictQuery: string;
@@ -157,27 +164,33 @@ export default function DictionaryTab({
               <button
                 onClick={() => void loadDictionary(0)}
                 disabled={dictLoading}
-                className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                 First
               </button>
             )}
             <button
               onClick={() => void loadDictionary(Math.max(0, dictPage - 1))}
               disabled={dictLoading || dictPage <= 0}
-              className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+              className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
               Prev
             </button>
-            <select
-              value={dictTotalPages > 0 ? dictPage : 0}
-              onChange={(event) => void loadDictionary(Number(event.target.value))}
+            <Select
+              variant="ui"
+              value={String(dictTotalPages > 0 ? dictPage : 0)}
+              onValueChange={(v) => void loadDictionary(Number(v))}
               disabled={dictLoading || dictTotalPages <= 0}
-              className="ui-input rounded-md px-2 py-1.5 text-xs">
-              {Array.from({ length: dictTotalPages || 1 }, (_, idx) => (
-                <option key={idx} value={idx}>
-                  Page {idx + 1}
-                </option>
-              ))}
-            </select>
+            >
+              <SelectTrigger className="w-28 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: dictTotalPages || 1 }, (_, idx) => (
+                  <SelectItem key={idx} value={String(idx)}>
+                    Page {idx + 1}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <button
               onClick={() =>
                 void loadDictionary(
@@ -192,14 +205,14 @@ export default function DictionaryTab({
                 dictTotalPages <= 0 ||
                 dictPage >= dictTotalPages - 1
               }
-              className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+              className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
               Next
             </button>
             {dictTotalPages > 1 && dictPage < dictTotalPages - 1 && (
               <button
                 onClick={() => void loadDictionary(Math.max(dictTotalPages - 1, 0))}
                 disabled={dictLoading}
-                className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                 Last
               </button>
             )}

@@ -2,6 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import { adminFetch, unwrapPage } from "../utils";
 import Pagination from "../Pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FeedbackEntry {
   feedbackId: number;
@@ -12,6 +19,13 @@ interface FeedbackEntry {
   comment?: string;
   createdAt?: string;
 }
+
+const SORT_OPTIONS = [
+  { value: "createdAt,desc", label: "Newest first" },
+  { value: "createdAt,asc", label: "Oldest first" },
+  { value: "comment,asc", label: "A → Z" },
+  { value: "comment,desc", label: "Z → A" },
+];
 
 function StarRating({ rating }: { rating?: number }) {
   if (!rating) return <span className="text-neutral-500">—</span>;
@@ -37,6 +51,7 @@ export default function FeedbackPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState("createdAt,desc");
 
   const load = useCallback(
     async (p = 0) => {
@@ -44,7 +59,7 @@ export default function FeedbackPage() {
       setError(null);
       try {
         const res = await adminFetch(
-          `/api/feedbacks?page=${p}&size=15&sort=createdAt,desc`
+          `/api/feedbacks?page=${p}&size=15&sort=${sort}`
         );
         const pg = unwrapPage(res);
         setFeedbacks(pg.content);
@@ -57,16 +72,28 @@ export default function FeedbackPage() {
         setLoading(false);
       }
     },
-    []
+    [sort]
   );
 
   useEffect(() => { void load(0); }, [load]);
 
   return (
     <div className="flex flex-col h-full gap-4">
-      <div>
-        <h1 className="text-xl font-bold text-neutral-100">All Feedback</h1>
-        <p className="mt-1 text-sm text-neutral-500">{totalElements} feedback records total</p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-neutral-100">All Feedback</h1>
+          <p className="mt-1 text-sm text-neutral-500">{totalElements} feedback records total</p>
+        </div>
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {error && (

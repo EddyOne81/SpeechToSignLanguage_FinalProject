@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+/* CSS variable defaults (dark theme) — ensures Radix portals outside theme containers get values */
+:root {
+  --bg-top: #020310;
+  --bg-mid: #06091a;
+  --bg-bottom: #0c1128;
+  --text-main: #eef2ff;
+  --accent: #4d8ef7;
+  --accent-strong: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.22);
+  --accent-green: #34d399;
+  --accent-orange: #fb923c;
+  --accent-violet: #60a5fa;
+  --glass-bg: linear-gradient(145deg, rgba(10, 18, 40, 0.84), rgba(6, 12, 28, 0.74));
+  --glass-soft-bg: linear-gradient(160deg, rgba(14, 24, 50, 0.76), rgba(8, 14, 32, 0.64));
+  --glass-border: rgba(77, 142, 247, 0.3);
+  --glass-soft-border: rgba(77, 142, 247, 0.22);
+  --glass-inset-bg: rgba(6, 12, 32, 0.74);
+  --glass-highlight: rgba(178, 197, 255, 0.2);
+  --glass-shadow: 0 16px 40px rgba(4, 8, 24, 0.48);
+  --danger-soft: rgba(251, 113, 133, 0.16);
+}
+
 html {
   min-height: 100%;
   background: #050507;
@@ -650,6 +672,51 @@ body,
   background: rgba(255, 255, 255, 0.90);
   border-top-color: rgba(0, 61, 155, 0.12);
   backdrop-filter: none;
+}
+
+/* Custom Select component — user UI theme (adapts to light/dark via CSS vars) */
+.ui-select-trigger[data-state="open"] {
+  border-color: color-mix(in oklab, var(--accent) 56%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 26%, transparent);
+  outline: none;
+}
+
+.ui-select-content {
+  background: color-mix(in oklab, var(--bg-mid) 94%, transparent);
+  border: 1px solid color-mix(in oklab, var(--glass-border) 42%, transparent);
+  box-shadow: 0 12px 28px rgba(8, 12, 22, 0.18), 0 2px 8px rgba(10, 14, 26, 0.12);
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+/* .theme-light as ancestor (in-tree) OR directly on the element (portal) */
+.theme-light .ui-select-content,
+.ui-select-content.theme-light {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(0, 61, 155, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 61, 155, 0.1);
+  backdrop-filter: none;
+}
+
+.ui-select-item {
+  color: color-mix(in oklab, var(--text-main) 85%, transparent);
+}
+
+/* Light mode: item is inside .ui-select-content.theme-light (portal) or .theme-light ancestor */
+.theme-light .ui-select-item,
+.ui-select-content.theme-light .ui-select-item {
+  color: #1e293b;
+}
+
+.ui-select-item[data-highlighted] {
+  background: color-mix(in oklab, var(--glass-inset-bg) 75%, transparent);
+  color: var(--text-main);
+  outline: none;
+}
+
+.theme-light .ui-select-item[data-highlighted],
+.ui-select-content.theme-light .ui-select-item[data-highlighted] {
+  background: rgba(0, 61, 155, 0.08);
+  color: #0f172a;
 }
 
 .pose-viewer-fit {

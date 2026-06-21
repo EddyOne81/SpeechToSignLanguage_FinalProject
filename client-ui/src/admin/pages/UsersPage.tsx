@@ -2,6 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { Trash2, UserCog } from "lucide-react";
 import { adminFetch, unwrapPage } from "../utils";
 import Pagination from "../Pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface User {
   userId: number;
@@ -10,6 +17,13 @@ interface User {
   roles?: (string | { name?: string; roleName?: string })[];
   createdAt?: string;
 }
+
+const SORT_OPTIONS = [
+  { value: "userId,desc", label: "Newest first" },
+  { value: "userId,asc", label: "Oldest first" },
+  { value: "username,asc", label: "A → Z" },
+  { value: "username,desc", label: "Z → A" },
+];
 
 function getRoleNames(roles: User["roles"]): string[] {
   if (!roles) return [];
@@ -28,13 +42,14 @@ export default function UsersPage() {
   const [roleEditing, setRoleEditing] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState<Record<number, boolean>>({});
   const [deleting, setDeleting] = useState<Record<number, boolean>>({});
+  const [sort, setSort] = useState("userId,desc");
 
   const load = useCallback(
     async (p = 0) => {
       setLoading(true);
       setError(null);
       try {
-        const res = await adminFetch(`/api/users?page=${p}&size=15&sort=userId,desc`);
+        const res = await adminFetch(`/api/users?page=${p}&size=15&sort=${sort}`);
         const pg = unwrapPage(res);
         setUsers(pg.content);
         setTotalPages(pg.totalPages);
@@ -46,7 +61,7 @@ export default function UsersPage() {
         setLoading(false);
       }
     },
-    []
+    [sort]
   );
 
   useEffect(() => { void load(0); }, [load]);
@@ -86,9 +101,21 @@ export default function UsersPage() {
 
   return (
     <div className="flex flex-col h-full gap-4">
-      <div>
-        <h1 className="text-xl font-bold text-neutral-100">User Management</h1>
-        <p className="mt-1 text-sm text-neutral-500">{totalElements} users total</p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-neutral-100">User Management</h1>
+          <p className="mt-1 text-sm text-neutral-500">{totalElements} users total</p>
+        </div>
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {error && (
@@ -130,16 +157,20 @@ export default function UsersPage() {
                       <td className="px-4 py-3">
                         {isEditing ? (
                           <div className="flex items-center gap-2">
-                            <select
+                            <Select
                               value={roleEditing[u.userId]}
-                              onChange={(e) =>
-                                setRoleEditing((prev) => ({ ...prev, [u.userId]: e.target.value }))
+                              onValueChange={(v) =>
+                                setRoleEditing((prev) => ({ ...prev, [u.userId]: v }))
                               }
-                              className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-xs text-neutral-200 focus:outline-none"
                             >
-                              <option value="ROLE_USER">ROLE_USER</option>
-                              <option value="ROLE_ADMIN">ROLE_ADMIN</option>
-                            </select>
+                              <SelectTrigger className="h-7 w-32 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="ROLE_USER">ROLE_USER</SelectItem>
+                                <SelectItem value="ROLE_ADMIN">ROLE_ADMIN</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <button
                               onClick={() => void handleRoleChange(u, roleEditing[u.userId])}
                               disabled={saving[u.userId]}

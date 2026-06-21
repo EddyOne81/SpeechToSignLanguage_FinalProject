@@ -6,6 +6,13 @@ import type {
   FeedbackItem,
   FeedbackSortType,
 } from "../types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FeedbackTabProps {
   isLoggedIn: boolean;
@@ -165,17 +172,25 @@ export default function FeedbackTab({
             placeholder="Search by History ID"
             className="ui-input min-w-[150px] flex-1 rounded-lg px-3 py-2 text-sm"
           />
-          <select
+          <Select
+            variant="ui"
             value={feedbackSort}
-            onChange={(event) =>
-              setFeedbackSort(event.target.value as FeedbackSortType)
-            }
-            className="ui-input min-w-[140px] flex-1 rounded-lg px-3 py-2 text-sm">
-            <option value="latest">Latest</option>
-            <option value="oldest">Oldest</option>
-            <option value="rating_high">Rating Highest</option>
-            <option value="rating_low">Rating Lowest</option>
-          </select>
+            onValueChange={(v) => {
+              const sort = v as FeedbackSortType;
+              setFeedbackSort(sort);
+              void loadFeedbacks(0, feedbackHistoryIdSearch, sort);
+            }}
+          >
+            <SelectTrigger className="min-w-[150px] flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="latest">Latest</SelectItem>
+              <SelectItem value="oldest">Oldest</SelectItem>
+              <SelectItem value="rating_high">Rating Highest</SelectItem>
+              <SelectItem value="rating_low">Rating Lowest</SelectItem>
+            </SelectContent>
+          </Select>
           <button
             onClick={() => void loadFeedbacks(0)}
             className="ui-btn-primary flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide">
@@ -269,7 +284,7 @@ export default function FeedbackTab({
                 <button
                   onClick={() => void loadFeedbacks(0)}
                   disabled={feedbackLoading}
-                  className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                  className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                   First
                 </button>
               )}
@@ -278,25 +293,26 @@ export default function FeedbackTab({
                   void loadFeedbacks(Math.max(0, feedbackPage - 1))
                 }
                 disabled={feedbackLoading || feedbackPage <= 0}
-                className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                 Prev
               </button>
-              <select
-                value={feedbackTotalPages > 0 ? feedbackPage : 0}
-                onChange={(event) =>
-                  void loadFeedbacks(Number(event.target.value))
-                }
+              <Select
+                variant="ui"
+                value={String(feedbackTotalPages > 0 ? feedbackPage : 0)}
+                onValueChange={(v) => void loadFeedbacks(Number(v))}
                 disabled={feedbackLoading || feedbackTotalPages <= 0}
-                className="ui-input rounded-md px-2 py-1.5 text-xs">
-                {Array.from(
-                  { length: feedbackTotalPages || 1 },
-                  (_, idx) => (
-                    <option key={idx} value={idx}>
+              >
+                <SelectTrigger className="w-28 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: feedbackTotalPages || 1 }, (_, idx) => (
+                    <SelectItem key={idx} value={String(idx)}>
                       Page {idx + 1}
-                    </option>
-                  ),
-                )}
-              </select>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <button
                 onClick={() =>
                   void loadFeedbacks(
@@ -311,7 +327,7 @@ export default function FeedbackTab({
                   feedbackTotalPages <= 0 ||
                   feedbackPage >= feedbackTotalPages - 1
                 }
-                className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                 Next
               </button>
               {feedbackTotalPages > 1 &&
@@ -323,7 +339,7 @@ export default function FeedbackTab({
                       )
                     }
                     disabled={feedbackLoading}
-                    className="ui-btn-secondary rounded-md px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                    className="ui-btn-secondary h-9 flex items-center rounded-md px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                     Last
                   </button>
                 )}

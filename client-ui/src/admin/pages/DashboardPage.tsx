@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BarChart3, BookOpen, History, MessageSquare, Users } from "lucide-react";
+import { BarChart3, BookOpen, History, MessageSquare, Star, Users } from "lucide-react";
 import { adminFetch, unwrapPage } from "../utils";
 
 interface Stats {
@@ -7,6 +7,23 @@ interface Stats {
   dictEntries: number;
   histories: number;
   feedbacks: number;
+}
+
+interface RecentHistory {
+  historyId: number;
+  username?: string;
+  userId?: number;
+  inputText?: string;
+  createdAt?: string;
+}
+
+interface RecentFeedback {
+  feedbackId: number;
+  username?: string;
+  userId?: number;
+  rating?: number;
+  comment?: string;
+  createdAt?: string;
 }
 
 const STAT_CARDS = [
@@ -18,6 +35,8 @@ const STAT_CARDS = [
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [recentHistories, setRecentHistories] = useState<RecentHistory[]>([]);
+  const [recentFeedbacks, setRecentFeedbacks] = useState<RecentFeedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,15 +46,19 @@ export default function DashboardPage() {
         const [usersRes, dictRes, histRes, feedRes] = await Promise.all([
           adminFetch("/api/users?page=0&size=1"),
           adminFetch("/api/dictionaries?page=0&size=1"),
-          adminFetch("/api/histories?page=0&size=1"),
-          adminFetch("/api/feedbacks?page=0&size=1"),
+          adminFetch("/api/histories?page=0&size=5&sort=createdAt,desc"),
+          adminFetch("/api/feedbacks?page=0&size=5&sort=createdAt,desc"),
         ]);
+        const histPg = unwrapPage(histRes);
+        const feedPg = unwrapPage(feedRes);
         setStats({
           users: unwrapPage(usersRes).totalElements,
           dictEntries: unwrapPage(dictRes).totalElements,
-          histories: unwrapPage(histRes).totalElements,
-          feedbacks: unwrapPage(feedRes).totalElements,
+          histories: histPg.totalElements,
+          feedbacks: feedPg.totalElements,
         });
+        setRecentHistories(histPg.content);
+        setRecentFeedbacks(feedPg.content);
       } catch (err: any) {
         setError(err.message ?? "Failed to load stats.");
       } finally {
@@ -78,6 +101,92 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Recent activity panels */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Recent Translations */}
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <History className="h-4 w-4 text-amber-400" />
+            <h2 className="text-sm font-semibold text-neutral-300">Recent Translations</h2>
+          </div>
+          {loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-12 animate-pulse rounded-lg bg-neutral-800" />
+              ))}
+            </div>
+          ) : recentHistories.length === 0 ? (
+            <p className="text-sm text-neutral-500">No translations yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentHistories.map((h) => (
+                <div
+                  key={h.historyId}
+                  className="flex items-start justify-between gap-3 rounded-lg bg-neutral-800/50 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium text-neutral-200">
+                      {h.inputText || "—"}
+                    </p>
+                    <p className="mt-0.5 text-xs text-neutral-500">
+                      {h.username ?? (h.userId != null ? `#${h.userId}` : "—")}
+                    </p>
+                  </div>
+                  <span className="shrink-0 whitespace-nowrap text-xs text-neutral-600">
+                    {h.createdAt ? new Date(h.createdAt).toLocaleDateString() : "—"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Feedbacks */}
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="h-4 w-4 text-rose-400" />
+            <h2 className="text-sm font-semibold text-neutral-300">Recent Feedback</h2>
+          </div>
+          {loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-14 animate-pulse rounded-lg bg-neutral-800" />
+              ))}
+            </div>
+          ) : recentFeedbacks.length === 0 ? (
+            <p className="text-sm text-neutral-500">No feedback yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentFeedbacks.map((f) => (
+                <div key={f.feedbackId} className="rounded-lg bg-neutral-800/50 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-xs font-medium text-neutral-200">
+                      {f.username ?? (f.userId != null ? `#${f.userId}` : "—")}
+                    </span>
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-3 w-3 ${
+                            i < (f.rating ?? 0)
+                              ? "fill-amber-400 text-amber-400"
+                              : "fill-neutral-700 text-neutral-700"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {f.comment && (
+                    <p className="line-clamp-1 text-xs text-neutral-500">{f.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* System Notes */}
       <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
         <div className="flex items-center gap-2 mb-3">
           <BarChart3 className="h-4 w-4 text-indigo-400" />
