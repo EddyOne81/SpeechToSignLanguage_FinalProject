@@ -861,7 +861,7 @@ export default function SignLanguageUI({
               </button>
             </div>
           )}
-          <main className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-8">
+          <main className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-none flex-col px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-8 xl:flex-1">
         <PageHeader activeTab={activeTab} />
 
         {authUser && profile?.emailVerified === false && !emailBannerDismissed && (
