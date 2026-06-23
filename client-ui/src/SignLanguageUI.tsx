@@ -84,6 +84,9 @@ export default function SignLanguageUI({
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<number | null>(null);
   const skipHistoryAutoLoadRef = useRef(false);
+  // Tabs already loaded this session — avoid re-fetching (and re-spinning) on
+  // every tab switch, which is slow because each call is a cross-region DB hit.
+  const loadedTabsRef = useRef<Set<string>>(new Set());
 
   const [transcript, setTranscript] = useState<string>("");
   const [poseBuffer, setPoseBuffer] = useState<PoseBuffer | null>(null);
@@ -160,6 +163,9 @@ export default function SignLanguageUI({
 
   useEffect(() => {
     setEmailBannerDismissed(false);
+    // Reset per-tab load cache so a different user never sees the previous
+    // user's data; history is (re)loaded fresh just below.
+    loadedTabsRef.current = new Set(["history"]);
     if (!authUser) {
       setProfile(null);
       return;
@@ -169,7 +175,12 @@ export default function SignLanguageUI({
   }, [authUser?.username]);
 
   useEffect(() => {
+    // Only auto-load a tab the first time it is opened this session. Returning
+    // to it shows the already-fetched data instantly; explicit actions (search,
+    // pagination, post-translation reload) still fetch fresh data.
     if (activeTab === "dictionary") {
+      if (loadedTabsRef.current.has("dictionary")) return;
+      loadedTabsRef.current.add("dictionary");
       void loadDictionary();
     }
     if (activeTab === "history") {
@@ -177,9 +188,13 @@ export default function SignLanguageUI({
         skipHistoryAutoLoadRef.current = false;
         return;
       }
+      if (loadedTabsRef.current.has("history")) return;
+      loadedTabsRef.current.add("history");
       void loadHistories();
     }
     if (activeTab === "feedback") {
+      if (loadedTabsRef.current.has("feedback")) return;
+      loadedTabsRef.current.add("feedback");
       void loadFeedbacks();
     }
   }, [activeTab]);
