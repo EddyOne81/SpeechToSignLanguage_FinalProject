@@ -18,6 +18,7 @@ import {
   notifyUnauthorized,
   setToken,
 } from "./utils/api";
+import { recordedBlobToWav } from "./utils/audio";
 import type {
   DictionaryItem,
   FeedbackFormData,
@@ -228,17 +229,27 @@ export default function SignLanguageUI({
         }
       };
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
-        });
-
-        const file = new File([audioBlob], "recorded_audio.webm", {
-          type: "audio/webm",
-        });
-        setAudioFile(file);
-
+      mediaRecorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop());
+
+        const recordedType = mediaRecorder.mimeType || "audio/webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: recordedType });
+
+        if (audioBlob.size === 0) {
+          setErrorMsg("No audio was captured. Please try recording again.");
+          return;
+        }
+
+        // Re-encode to a clean WAV so Whisper transcribes reliably — the raw
+        // MediaRecorder webm often decodes as silence and yields garbage like "You".
+        try {
+          const wavBlob = await recordedBlobToWav(audioBlob);
+          setAudioFile(new File([wavBlob], "recorded_audio.wav", { type: "audio/wav" }));
+        } catch (err) {
+          console.warn("[System] WAV conversion failed, sending original recording.", err);
+          const ext = recordedType.includes("mp4") ? "m4a" : "webm";
+          setAudioFile(new File([audioBlob], `recorded_audio.${ext}`, { type: recordedType }));
+        }
       };
 
       mediaRecorder.start();
