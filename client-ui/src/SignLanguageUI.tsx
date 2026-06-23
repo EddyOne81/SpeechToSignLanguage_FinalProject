@@ -14,6 +14,9 @@ import {
   extractPageContent,
   extractPayloadFromApiResponse,
   unwrapApiResponse,
+  withAuthHeaders,
+  notifyUnauthorized,
+  setToken,
 } from "./utils/api";
 import type {
   DictionaryItem,
@@ -313,7 +316,7 @@ export default function SignLanguageUI({
   };
 
   const apiRequest = async (path: string, options: RequestInit = {}) => {
-    const headers = new Headers(options.headers || {});
+    const headers = withAuthHeaders(options.headers as HeadersInit | undefined);
     if (
       !headers.has("Content-Type") &&
       options.body &&
@@ -330,6 +333,13 @@ export default function SignLanguageUI({
       headers,
       credentials: "include",
     });
+
+    // 401 on a non-login request means our session/token is no longer valid.
+    // Don't trip this on the login/register calls themselves (bad credentials).
+    if (response.status === 401 && !path.startsWith("/api/auth/")) {
+      notifyUnauthorized();
+      throw new Error("Your session has expired. Please log in again.");
+    }
 
     const body = await response.json().catch(() => null);
     if (!response.ok) {
@@ -349,6 +359,7 @@ export default function SignLanguageUI({
       if (!payload?.username) {
         throw new Error("Login response missing user info.");
       }
+      if (payload.token) setToken(payload.token);
       const user = { username: payload.username, role: payload.role };
       setAuthUser(user);
       onAuthChange?.(user);
@@ -370,6 +381,7 @@ export default function SignLanguageUI({
       if (!payload?.username) {
         throw new Error("Register response missing user info.");
       }
+      if (payload.token) setToken(payload.token);
       const user = { username: payload.username, role: payload.role };
       setAuthUser(user);
       onAuthChange?.(user);
@@ -645,6 +657,7 @@ export default function SignLanguageUI({
       await fetch(`${BACKEND_BASE_URL}/api/auth/resend-verification`, {
         method: "POST",
         credentials: "include",
+        headers: withAuthHeaders(undefined),
       });
       setResendVerifyMsg("Verification email sent! Check your inbox.");
     } catch {

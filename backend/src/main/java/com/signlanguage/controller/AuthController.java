@@ -37,6 +37,7 @@ public class AuthController {
         var authResponse = authService.register(request);
         String jwt = authService.generateTokenForUser(authResponse.getUsername());
         setJwtCookie(response, jwt);
+        authResponse.setToken(jwt);
         return ApiResponses.ok(authResponse);
     }
 
@@ -45,6 +46,7 @@ public class AuthController {
         var authResponse = authService.login(request);
         String jwt = authService.generateTokenForUser(authResponse.getUsername());
         setJwtCookie(response, jwt);
+        authResponse.setToken(jwt);
         return ApiResponses.ok(authResponse);
     }
 

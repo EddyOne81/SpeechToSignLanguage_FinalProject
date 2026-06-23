@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import SignLanguageUI from "./SignLanguageUI";
 import AdminApp from "./admin/AdminApp";
-import { BACKEND_BASE_URL } from "./utils/api";
+import {
+  BACKEND_BASE_URL,
+  setToken,
+  clearToken,
+  withAuthHeaders,
+  UNAUTHORIZED_EVENT,
+} from "./utils/api";
 
 type AuthUser = { username?: string; role?: string } | null;
 type VerifyToast = { success: boolean; message: string } | null;
@@ -39,16 +45,18 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const oauthToken = params.get("oauth_token");
     if (oauthToken) {
+      // Persist the OAuth2 token so subsequent requests authenticate via header
+      // even if the cross-site session cookie is blocked by the browser.
+      setToken(oauthToken);
       params.delete("oauth_token");
       const newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
       window.history.replaceState({}, "", newUrl);
     }
 
-    const headers: HeadersInit = oauthToken
-      ? { Authorization: `Bearer ${oauthToken}` }
-      : {};
-
-    fetch(`${BACKEND_BASE_URL}/api/auth/me`, { credentials: "include", headers })
+    fetch(`${BACKEND_BASE_URL}/api/auth/me`, {
+      credentials: "include",
+      headers: withAuthHeaders(undefined),
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((body) => {
         if (body?.data?.username) {
@@ -76,9 +84,26 @@ export default function App() {
         keepalive: true,
       });
     } catch {}
+    clearToken();
     setAuthUser(null);
     setAdminViewMode("dashboard");
   };
+
+  // When any API call reports the session is no longer valid (401), drop the
+  // cached login state so the UI prompts for re-login instead of appearing
+  // logged-in while every protected action fails.
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setAuthUser(null);
+      setAdminViewMode("dashboard");
+      setVerifyToast({
+        success: false,
+        message: "Your session has expired. Please log in again.",
+      });
+    };
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+  }, []);
 
   if (authLoading) {
     return (

@@ -15,7 +15,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { formatDate } from "../utils/format";
-import { BACKEND_BASE_URL } from "../utils/api";
+import { BACKEND_BASE_URL, withAuthHeaders } from "../utils/api";
 import type { UserProfile } from "../types";
 
 interface AccountTabProps {
@@ -124,6 +124,7 @@ export default function AccountTab({
       const res = await fetch(`${BACKEND_BASE_URL}/api/auth/resend-verification`, {
         method: "POST",
         credentials: "include",
+        headers: withAuthHeaders(undefined),
       });
       const body = await res.json().catch(() => null);
       if (!res.ok) throw new Error(body?.message ?? "Failed to resend.");

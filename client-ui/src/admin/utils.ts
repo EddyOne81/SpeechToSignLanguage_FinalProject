@@ -1,10 +1,15 @@
-import { BACKEND_BASE_URL, extractErrorMessage } from "../utils/api";
+import {
+  BACKEND_BASE_URL,
+  extractErrorMessage,
+  withAuthHeaders,
+  notifyUnauthorized,
+} from "../utils/api";
 
 export async function adminFetch(
   path: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const headers = new Headers(options.headers as HeadersInit | undefined);
+  const headers = withAuthHeaders(options.headers as HeadersInit | undefined);
   if (
     !headers.has("Content-Type") &&
     options.body &&
@@ -20,6 +25,10 @@ export async function adminFetch(
     headers,
     credentials: "include",
   });
+  if (res.status === 401) {
+    notifyUnauthorized();
+    throw new Error("Your session has expired. Please log in again.");
+  }
   const body = await res.json().catch(() => null);
   if (!res.ok) throw new Error(extractErrorMessage(body));
   return body;
