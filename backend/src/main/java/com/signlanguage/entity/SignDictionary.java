@@ -35,10 +35,4 @@ public class SignDictionary {
 
     @Column(name = "pose_data", columnDefinition = "bytea")
     private byte[] poseData;
-
-    private Boolean isVerified;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "verified_by")
-    private UserSignLanguage verifiedBy;
 }

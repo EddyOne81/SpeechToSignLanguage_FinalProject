@@ -62,8 +62,6 @@ public class SignDictionaryService {
                 .signedLang(signedLang)
                 .cacheSource(cacheSource)
                 .poseFilePath(request.getPoseFilePath())
-                .isVerified(request.getIsVerified() == null ? false : request.getIsVerified())
-                .verifiedBy(resolveVerifiedBy(request.getVerifiedByUserId()))
                 .build();
 
         dictionaryRepository.save(dictionary);
@@ -107,12 +105,6 @@ public class SignDictionaryService {
         if (request.getPoseFilePath() != null) {
             dictionary.setPoseFilePath(request.getPoseFilePath());
         }
-        if (request.getIsVerified() != null) {
-            dictionary.setIsVerified(request.getIsVerified());
-        }
-        if (request.getVerifiedByUserId() != null) {
-            dictionary.setVerifiedBy(resolveVerifiedBy(request.getVerifiedByUserId()));
-        }
 
         dictionaryRepository.save(dictionary);
         return toResponse(dictionary);
@@ -152,8 +144,6 @@ public class SignDictionaryService {
         result.put("signedLang", dictionary.getSignedLang() == null ? "" : dictionary.getSignedLang());
         result.put("cacheSource", dictionary.getCacheSource() == null ? null : dictionary.getCacheSource().name());
         result.put("poseFilePath", dictionary.getPoseFilePath() == null ? "" : dictionary.getPoseFilePath());
-        result.put("isVerified", dictionary.getIsVerified() == null ? false : dictionary.getIsVerified());
-        result.put("verifiedByUserId", dictionary.getVerifiedBy() == null ? null : dictionary.getVerifiedBy().getUserId());
         return result;
     }
 

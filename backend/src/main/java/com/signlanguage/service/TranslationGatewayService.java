@@ -413,7 +413,6 @@ public class TranslationGatewayService {
                 .signedLang(signedLang)
                 .cacheSource(DictionaryCacheSource.AUTO_CACHED)
                 .poseData(poseBytes)
-                .isVerified(false)
                 .build();
 
         try {
