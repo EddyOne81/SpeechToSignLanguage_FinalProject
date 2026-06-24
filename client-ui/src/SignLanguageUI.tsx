@@ -14,7 +14,11 @@ import {
   extractPageContent,
   extractPayloadFromApiResponse,
   unwrapApiResponse,
+  withAuthHeaders,
+  notifyUnauthorized,
+  setToken,
 } from "./utils/api";
+import { recordedBlobToWav } from "./utils/audio";
 import type {
   DictionaryItem,
   FeedbackFormData,
@@ -80,6 +84,9 @@ export default function SignLanguageUI({
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<number | null>(null);
   const skipHistoryAutoLoadRef = useRef(false);
+  // Tabs already loaded this session — avoid re-fetching (and re-spinning) on
+  // every tab switch, which is slow because each call is a cross-region DB hit.
+  const loadedTabsRef = useRef<Set<string>>(new Set());
 
   const [transcript, setTranscript] = useState<string>("");
   const [poseBuffer, setPoseBuffer] = useState<PoseBuffer | null>(null);
@@ -156,6 +163,9 @@ export default function SignLanguageUI({
 
   useEffect(() => {
     setEmailBannerDismissed(false);
+    // Reset per-tab load cache so a different user never sees the previous
+    // user's data; history is (re)loaded fresh just below.
+    loadedTabsRef.current = new Set(["history"]);
     if (!authUser) {
       setProfile(null);
       return;
@@ -165,7 +175,12 @@ export default function SignLanguageUI({
   }, [authUser?.username]);
 
   useEffect(() => {
+    // Only auto-load a tab the first time it is opened this session. Returning
+    // to it shows the already-fetched data instantly; explicit actions (search,
+    // pagination, post-translation reload) still fetch fresh data.
     if (activeTab === "dictionary") {
+      if (loadedTabsRef.current.has("dictionary")) return;
+      loadedTabsRef.current.add("dictionary");
       void loadDictionary();
     }
     if (activeTab === "history") {
@@ -173,9 +188,13 @@ export default function SignLanguageUI({
         skipHistoryAutoLoadRef.current = false;
         return;
       }
+      if (loadedTabsRef.current.has("history")) return;
+      loadedTabsRef.current.add("history");
       void loadHistories();
     }
     if (activeTab === "feedback") {
+      if (loadedTabsRef.current.has("feedback")) return;
+      loadedTabsRef.current.add("feedback");
       void loadFeedbacks();
     }
   }, [activeTab]);
@@ -225,17 +244,27 @@ export default function SignLanguageUI({
         }
       };
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
-        });
-
-        const file = new File([audioBlob], "recorded_audio.webm", {
-          type: "audio/webm",
-        });
-        setAudioFile(file);
-
+      mediaRecorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop());
+
+        const recordedType = mediaRecorder.mimeType || "audio/webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: recordedType });
+
+        if (audioBlob.size === 0) {
+          setErrorMsg("No audio was captured. Please try recording again.");
+          return;
+        }
+
+        // Re-encode to a clean WAV so Whisper transcribes reliably — the raw
+        // MediaRecorder webm often decodes as silence and yields garbage like "You".
+        try {
+          const wavBlob = await recordedBlobToWav(audioBlob);
+          setAudioFile(new File([wavBlob], "recorded_audio.wav", { type: "audio/wav" }));
+        } catch (err) {
+          console.warn("[System] WAV conversion failed, sending original recording.", err);
+          const ext = recordedType.includes("mp4") ? "m4a" : "webm";
+          setAudioFile(new File([audioBlob], `recorded_audio.${ext}`, { type: recordedType }));
+        }
       };
 
       mediaRecorder.start();
@@ -313,7 +342,7 @@ export default function SignLanguageUI({
   };
 
   const apiRequest = async (path: string, options: RequestInit = {}) => {
-    const headers = new Headers(options.headers || {});
+    const headers = withAuthHeaders(options.headers as HeadersInit | undefined);
     if (
       !headers.has("Content-Type") &&
       options.body &&
@@ -330,6 +359,13 @@ export default function SignLanguageUI({
       headers,
       credentials: "include",
     });
+
+    // 401 on a non-login request means our session/token is no longer valid.
+    // Don't trip this on the login/register calls themselves (bad credentials).
+    if (response.status === 401 && !path.startsWith("/api/auth/")) {
+      notifyUnauthorized();
+      throw new Error("Your session has expired. Please log in again.");
+    }
 
     const body = await response.json().catch(() => null);
     if (!response.ok) {
@@ -349,6 +385,7 @@ export default function SignLanguageUI({
       if (!payload?.username) {
         throw new Error("Login response missing user info.");
       }
+      if (payload.token) setToken(payload.token);
       const user = { username: payload.username, role: payload.role };
       setAuthUser(user);
       onAuthChange?.(user);
@@ -370,6 +407,7 @@ export default function SignLanguageUI({
       if (!payload?.username) {
         throw new Error("Register response missing user info.");
       }
+      if (payload.token) setToken(payload.token);
       const user = { username: payload.username, role: payload.role };
       setAuthUser(user);
       onAuthChange?.(user);
@@ -645,6 +683,7 @@ export default function SignLanguageUI({
       await fetch(`${BACKEND_BASE_URL}/api/auth/resend-verification`, {
         method: "POST",
         credentials: "include",
+        headers: withAuthHeaders(undefined),
       });
       setResendVerifyMsg("Verification email sent! Check your inbox.");
     } catch {
@@ -822,7 +861,7 @@ export default function SignLanguageUI({
               </button>
             </div>
           )}
-          <main className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-8">
+          <main className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1600px] flex-none flex-col px-4 pb-5 pt-4 sm:px-6 sm:pb-6 lg:px-8 xl:flex-1">
         <PageHeader activeTab={activeTab} />
 
         {authUser && profile?.emailVerified === false && !emailBannerDismissed && (
