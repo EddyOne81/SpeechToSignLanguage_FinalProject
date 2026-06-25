@@ -53,7 +53,7 @@ export default function AdminApp({ authUser, onGoToApp, onLogout }: AdminAppProp
   };
 
   return (
-    <div className={`admin-panel flex h-screen overflow-hidden bg-neutral-950 text-neutral-100${theme === "light" ? " theme-light" : ""}`}>
+    <div className={`admin-panel flex h-dvh overflow-hidden bg-neutral-950 text-neutral-100${theme === "light" ? " theme-light" : ""}`}>
       {/* Mobile overlay backdrop */}
       {isMobileSidebarOpen && (
         <div
@@ -86,7 +86,7 @@ export default function AdminApp({ authUser, onGoToApp, onLogout }: AdminAppProp
           <span className="text-sm font-semibold text-neutral-100">Admin Panel</span>
         </div>
 
-        <div className="flex-1 overflow-hidden p-6 flex flex-col">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col">
           {renderPage()}
         </div>
       </main>

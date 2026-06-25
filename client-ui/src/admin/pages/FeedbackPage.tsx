@@ -15,6 +15,7 @@ interface FeedbackEntry {
   userId?: number;
   username?: string;
   historyId?: number;
+  historyText?: string;
   rating?: number;
   comment?: string;
   createdAt?: string;
@@ -107,7 +108,7 @@ export default function FeedbackPage() {
               <tr className="border-b border-neutral-800">
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">ID</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">User</th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">History</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Translation</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Rating</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Comment</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">Date</th>
@@ -129,8 +130,8 @@ export default function FeedbackPage() {
                     <td className="px-4 py-3 text-neutral-300 font-medium">
                       {f.username ?? (f.userId != null ? `#${f.userId}` : "—")}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-neutral-500">
-                      {f.historyId != null ? `#${f.historyId}` : "—"}
+                    <td className="px-4 py-3 text-neutral-400 max-w-xs">
+                      <span className="line-clamp-2">{f.historyText || "—"}</span>
                     </td>
                     <td className="px-4 py-3">
                       <StarRating rating={f.rating} />

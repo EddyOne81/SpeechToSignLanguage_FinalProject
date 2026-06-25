@@ -55,7 +55,7 @@ function PermissionGrid({
               onChange={() => onToggle(p.code)}
               className="sr-only"
             />
-            <span className="truncate text-xs">{p.name}</span>
+            <span className="text-xs leading-tight break-words">{p.name}</span>
           </label>
         );
       })}
@@ -418,8 +418,8 @@ export default function RolesPage() {
           )}
 
           {/* Roles table */}
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="border-b border-neutral-800">
                   <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">
@@ -526,8 +526,8 @@ export default function RolesPage() {
             </button>
           </div>
 
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="border-b border-neutral-800">
                   <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-neutral-500">

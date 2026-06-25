@@ -115,6 +115,7 @@ public class UserFeedbackController {
         result.put("userId", feedback.getUser() == null ? null : feedback.getUser().getUserId());
         result.put("username", feedback.getUser() == null ? null : feedback.getUser().getUsername());
         result.put("historyId", feedback.getHistory() == null ? null : feedback.getHistory().getHistoryId());
+        result.put("historyText", feedback.getHistory() == null ? null : feedback.getHistory().getInputText());
         result.put("rating", feedback.getRating() == null ? 0 : feedback.getRating());
         result.put("comment", feedback.getComment() == null ? "" : feedback.getComment());
         result.put("createdAt", feedback.getCreatedAt());

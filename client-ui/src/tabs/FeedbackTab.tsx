@@ -225,9 +225,10 @@ export default function FeedbackTab({
                         {item.comment}
                       </p>
                     )}
-                    {item.historyId && (
+                    {item.historyText && (
                       <p className="text-xs text-slate-500">
-                        History ID: {item.historyId}
+                        <span className="uppercase tracking-wide">Translation:</span>{" "}
+                        <span className="text-slate-400">{item.historyText}</span>
                       </p>
                     )}
                   </div>

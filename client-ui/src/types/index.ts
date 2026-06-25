@@ -31,6 +31,7 @@ export type HistoryItem = {
 export type FeedbackItem = {
   feedbackId: number;
   historyId?: number | null;
+  historyText?: string | null;
   rating?: number;
   comment?: string;
   createdAt?: string;

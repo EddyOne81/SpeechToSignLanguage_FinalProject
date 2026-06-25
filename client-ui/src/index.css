@@ -29,6 +29,7 @@ html {
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   color: #f7f0f6;
   font-family: "Inter", "Inter Fallback", ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -66,6 +67,10 @@ body,
 
 .app-shell {
   height: 100vh;
+  /* Use the dynamic viewport so the app is exactly as tall as the *visible*
+     area on mobile (where the URL bar shrinks 100vh past the fold). This keeps
+     the header/footer on-screen and avoids a second outer page scroll. */
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -247,6 +252,18 @@ body,
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 26%, transparent);
 }
 
+/* Mobile: iOS Safari auto-zooms when a focused form control has font-size < 16px.
+   Force >= 16px on small screens so typing no longer zooms the whole page in. */
+@media (max-width: 1023px) {
+  input,
+  textarea,
+  select,
+  .ui-input,
+  .ui-select-trigger {
+    font-size: 16px;
+  }
+}
+
 .ui-btn-primary {
   background: var(--accent-strong);
   color: #fff;
@@ -421,6 +438,7 @@ body,
   z-index: 40;
   width: 248px;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   border-right: 1px solid color-mix(in oklab, var(--accent) 16%, transparent);

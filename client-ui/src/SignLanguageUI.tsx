@@ -834,7 +834,7 @@ export default function SignLanguageUI({
 
   return (
     <div
-      className={`app-shell ${theme === "dark" ? "theme-dark" : "theme-light"} relative h-screen w-full overflow-hidden`}>
+      className={`app-shell ${theme === "dark" ? "theme-dark" : "theme-light"} relative h-dvh w-full overflow-hidden`}>
       <div className={`relative z-10 flex w-full h-full flex-col lg:flex-row${isSidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>
         <AppSidebar
           theme={theme}
