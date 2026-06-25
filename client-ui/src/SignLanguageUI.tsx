@@ -115,7 +115,7 @@ export default function SignLanguageUI({
   const [feedbackSize] = useState(10);
   const [feedbackTotalPages, setFeedbackTotalPages] = useState(0);
   const [feedbackTotalElements, setFeedbackTotalElements] = useState(0);
-  const [feedbackHistoryIdSearch, setFeedbackHistoryIdSearch] = useState("");
+  const [feedbackSearch, setFeedbackSearch] = useState("");
   const [feedbackSort, setFeedbackSort] = useState<FeedbackSortType>("latest");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
@@ -515,7 +515,7 @@ export default function SignLanguageUI({
 
   const loadFeedbacks = async (
     targetPage = feedbackPage,
-    overrideHistoryId?: string,
+    overrideQuery?: string,
     overrideSort?: FeedbackSortType,
   ) => {
     if (!authUser) {
@@ -527,7 +527,7 @@ export default function SignLanguageUI({
     setFeedbackLoading(true);
     setFeedbackError(null);
     try {
-      const searchHistoryId = (overrideHistoryId ?? feedbackHistoryIdSearch).trim();
+      const searchQuery = (overrideQuery ?? feedbackSearch).trim();
       const sort = overrideSort ?? feedbackSort;
       const sortQuery =
         sort === "latest"
@@ -537,12 +537,11 @@ export default function SignLanguageUI({
             : sort === "rating_high"
               ? "rating,desc"
               : "rating,asc";
-      const historyFilter =
-        searchHistoryId && Number.isInteger(Number(searchHistoryId))
-          ? `&historyId=${Number(searchHistoryId)}`
-          : "";
+      const searchFilter = searchQuery
+        ? `&q=${encodeURIComponent(searchQuery)}`
+        : "";
       const response = await apiRequest(
-        `/api/feedbacks/me?page=${targetPage}&size=${feedbackSize}&sort=${sortQuery}${historyFilter}`,
+        `/api/feedbacks/me?page=${targetPage}&size=${feedbackSize}&sort=${sortQuery}${searchFilter}`,
       );
       const pageData = extractPageContent(response);
       const content = pageData.content || [];
@@ -975,8 +974,8 @@ export default function SignLanguageUI({
             feedbackPage={feedbackPage}
             feedbackTotalPages={feedbackTotalPages}
             feedbackTotalElements={feedbackTotalElements}
-            feedbackHistoryIdSearch={feedbackHistoryIdSearch}
-            setFeedbackHistoryIdSearch={setFeedbackHistoryIdSearch}
+            feedbackSearch={feedbackSearch}
+            setFeedbackSearch={setFeedbackSearch}
             feedbackSort={feedbackSort}
             setFeedbackSort={setFeedbackSort}
             feedbackLoading={feedbackLoading}

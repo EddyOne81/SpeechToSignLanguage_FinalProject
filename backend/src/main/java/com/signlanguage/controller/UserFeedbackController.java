@@ -31,11 +31,17 @@ public class UserFeedbackController {
     @GetMapping("/me")
     public ResponseEntity<?> getMyFeedbacks(
             @RequestParam(required = false) Long historyId,
+            @RequestParam(required = false) String q,
             Pageable pageable) {
         UserSignLanguage user = currentUserService.requireCurrentUser();
-        Page<UserFeedback> page = historyId == null
-                ? feedbackRepository.findByUserUserId(user.getUserId(), pageable)
-                : feedbackRepository.findByUserUserIdAndHistoryHistoryId(user.getUserId(), historyId, pageable);
+        Page<UserFeedback> page;
+        if (historyId != null) {
+            page = feedbackRepository.findByUserUserIdAndHistoryHistoryId(user.getUserId(), historyId, pageable);
+        } else if (q != null && !q.isBlank()) {
+            page = feedbackRepository.searchByUserAndText(user.getUserId(), q.trim(), pageable);
+        } else {
+            page = feedbackRepository.findByUserUserId(user.getUserId(), pageable);
+        }
         return ApiResponses.ok(page.map(this::toResponse));
     }
 

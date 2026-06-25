@@ -20,8 +20,8 @@ interface FeedbackTabProps {
   feedbackPage: number;
   feedbackTotalPages: number;
   feedbackTotalElements: number;
-  feedbackHistoryIdSearch: string;
-  setFeedbackHistoryIdSearch: (v: string) => void;
+  feedbackSearch: string;
+  setFeedbackSearch: (v: string) => void;
   feedbackSort: FeedbackSortType;
   setFeedbackSort: (v: FeedbackSortType) => void;
   feedbackLoading: boolean;
@@ -31,7 +31,7 @@ interface FeedbackTabProps {
   setFeedbackForm: React.Dispatch<React.SetStateAction<FeedbackFormData>>;
   loadFeedbacks: (
     targetPage?: number,
-    overrideHistoryId?: string,
+    overrideQuery?: string,
     overrideSort?: FeedbackSortType,
   ) => Promise<void>;
   submitFeedback: () => Promise<void>;
@@ -45,8 +45,8 @@ export default function FeedbackTab({
   feedbackPage,
   feedbackTotalPages,
   feedbackTotalElements,
-  feedbackHistoryIdSearch,
-  setFeedbackHistoryIdSearch,
+  feedbackSearch,
+  setFeedbackSearch,
   feedbackSort,
   setFeedbackSort,
   feedbackLoading,
@@ -148,7 +148,7 @@ export default function FeedbackTab({
           </h3>
           <button
             onClick={() => {
-              setFeedbackHistoryIdSearch("");
+              setFeedbackSearch("");
               setFeedbackSort("latest");
               void loadFeedbacks(0, "", "latest");
             }}
@@ -159,17 +159,15 @@ export default function FeedbackTab({
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <input
-            value={feedbackHistoryIdSearch}
-            onChange={(event) =>
-              setFeedbackHistoryIdSearch(event.target.value)
-            }
+            value={feedbackSearch}
+            onChange={(event) => setFeedbackSearch(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
                 void loadFeedbacks(0);
               }
             }}
-            placeholder="Search by History ID"
+            placeholder="Search by translation or comment"
             className="ui-input min-w-[150px] flex-1 rounded-lg px-3 py-2 text-sm"
           />
           <Select
@@ -178,7 +176,7 @@ export default function FeedbackTab({
             onValueChange={(v) => {
               const sort = v as FeedbackSortType;
               setFeedbackSort(sort);
-              void loadFeedbacks(0, feedbackHistoryIdSearch, sort);
+              void loadFeedbacks(0, feedbackSearch, sort);
             }}
           >
             <SelectTrigger className="min-w-[150px] flex-1">
