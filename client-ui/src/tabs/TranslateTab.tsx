@@ -293,7 +293,7 @@ export default function TranslateTab({
                 </span>
               </div>
             )}
-            <div className="glass-inset relative flex min-h-[320px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/65 p-2">
+            <div className="glass-inset relative flex min-h-[200px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/65 p-2 sm:min-h-[320px]">
               {poseBuffer ? (
                 <PoseViewer buffer={poseBuffer} />
               ) : isOfflineMode ? (
@@ -307,7 +307,7 @@ export default function TranslateTab({
               )}
             </div>
 
-            <div className="glass-inset mt-3 rounded-xl px-5 py-3 text-center text-base">
+            <div className="glass-inset mt-3 shrink-0 rounded-xl px-5 py-3 text-center text-base">
               {transcript ? (
                 <span className="line-clamp-2 leading-relaxed tracking-[0.01em]">
                   {transcript}
