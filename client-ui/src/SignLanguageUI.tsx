@@ -261,6 +261,15 @@ export default function SignLanguageUI({
           const wavBlob = await recordedBlobToWav(audioBlob);
           setAudioFile(new File([wavBlob], "recorded_audio.wav", { type: "audio/wav" }));
         } catch (err) {
+          if ((err as Error)?.message === "SILENT_AUDIO") {
+            // Capture was (near) silent — translating it would just return a
+            // hallucinated "You". Tell the user to fix their mic instead.
+            setAudioFile(null);
+            setErrorMsg(
+              "No speech was detected. Check that the right microphone is selected and not muted, then record again.",
+            );
+            return;
+          }
           console.warn("[System] WAV conversion failed, sending original recording.", err);
           const ext = recordedType.includes("mp4") ? "m4a" : "webm";
           setAudioFile(new File([audioBlob], `recorded_audio.${ext}`, { type: recordedType }));

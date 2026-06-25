@@ -36,10 +36,34 @@ export async function recordedBlobToWav(blob: Blob): Promise<Blob> {
   source.start();
   const rendered = await offline.startRendering();
 
-  return encodeWav(rendered.getChannelData(0), TARGET_SAMPLE_RATE);
+  const channel = rendered.getChannelData(0);
+
+  // Measure how loud the capture actually is. A blank/muted microphone (wrong
+  // input device, OS-level mute, denied-then-allowed permission) produces near
+  // silence, and Groq Whisper then hallucinates a generic token like "You" no
+  // matter what was spoken. Detect that up front so the caller can tell the
+  // user instead of silently translating garbage.
+  let peak = 0;
+  let sumSquares = 0;
+  for (let i = 0; i < channel.length; i++) {
+    const abs = Math.abs(channel[i]);
+    if (abs > peak) peak = abs;
+    sumSquares += channel[i] * channel[i];
+  }
+  const rms = Math.sqrt(sumSquares / Math.max(1, channel.length));
+  if (peak < 0.01 || rms < 0.0008) {
+    throw new Error("SILENT_AUDIO");
+  }
+
+  // Normalize quiet recordings toward full scale so a soft-spoken or low-gain
+  // microphone still gives Whisper a clearly audible signal. Capped so we don't
+  // blow faint background noise up into its own hallucinations.
+  const gain = peak < 0.7 ? Math.min(0.95 / peak, 12) : 1;
+
+  return encodeWav(channel, TARGET_SAMPLE_RATE, gain);
 }
 
-function encodeWav(samples: Float32Array, sampleRate: number): Blob {
+function encodeWav(samples: Float32Array, sampleRate: number, gain = 1): Blob {
   const bytesPerSample = 2; // 16-bit
   const buffer = new ArrayBuffer(44 + samples.length * bytesPerSample);
   const view = new DataView(buffer);
@@ -65,10 +89,10 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   writeString(36, "data");
   view.setUint32(40, dataSize, true);
 
-  // Clamp and write 16-bit PCM little-endian.
+  // Apply gain, clamp, and write 16-bit PCM little-endian.
   let offset = 44;
   for (let i = 0; i < samples.length; i++) {
-    const s = Math.max(-1, Math.min(1, samples[i]));
+    const s = Math.max(-1, Math.min(1, samples[i] * gain));
     view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
     offset += bytesPerSample;
   }

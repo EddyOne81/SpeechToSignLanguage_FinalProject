@@ -25,6 +25,9 @@ class ASRService:
                 file=(filename, f.read()),
                 model=GROQ_MODEL,
                 response_format="text",
+                # Greedy decoding — reduces Whisper's tendency to hallucinate a
+                # generic token (e.g. "You") on quiet or short audio.
+                temperature=0,
             )
         text = result if isinstance(result, str) else result.text
         return text.strip()
