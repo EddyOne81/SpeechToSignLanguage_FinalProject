@@ -664,6 +664,8 @@ body,
 .admin-panel.theme-light .bg-neutral-950 { background-color: #f0f5fb !important; }
 .admin-panel.theme-light .bg-neutral-900 { background-color: #ffffff !important; }
 .admin-panel.theme-light .bg-neutral-800 { background-color: #f1f5fe !important; }
+.admin-panel.theme-light .bg-neutral-800\/50 { background-color: #f1f5fe !important; }
+.admin-panel.theme-light .bg-neutral-700\/50 { background-color: rgba(0,61,155,0.08) !important; }
 .admin-panel.theme-light .border-neutral-800 { border-color: rgba(0,61,155,0.14) !important; }
 .admin-panel.theme-light .border-neutral-700 { border-color: rgba(0,61,155,0.2) !important; }
 .admin-panel.theme-light .text-neutral-100 { color: #0f172a !important; }
