@@ -13,7 +13,9 @@ public interface SignDictionaryRepository extends JpaRepository<SignDictionary, 
     boolean existsByEnglishTextIgnoreCase(String text);
     boolean existsByEnglishTextIgnoreCaseAndWordIdNot(String text, Long wordId);
     Page<SignDictionary> findByEnglishTextContainingIgnoreCase(String q, Pageable pageable);
-    Page<SignDictionary> findByEnglishTextContainingIgnoreCaseOrNormalizedTextContainingIgnoreCase(String q, String normalizedText, Pageable pageable);
+    // Returns a lightweight projection (no pose_data BYTEA). Used for list/search;
+    // an empty query string matches everything (english_text is never null).
+    Page<SignDictionaryListView> findByEnglishTextContainingIgnoreCaseOrNormalizedTextContainingIgnoreCase(String q, String normalizedText, Pageable pageable);
     Optional<SignDictionary> findFirstByNormalizedTextAndEntryTypeAndSpokenLangAndSignedLang(
             String normalizedText,
             DictionaryEntryType entryType,

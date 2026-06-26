@@ -2,6 +2,7 @@ package com.signlanguage.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -37,6 +38,9 @@ public class Role {
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
+    // Batch the eager secondary selects (IN query) instead of one per role,
+    // so loading several roles doesn't fan out into an N+1 storm.
+    @BatchSize(size = 100)
     @Builder.Default
     private Set<Permission> permissions = new HashSet<>();
 

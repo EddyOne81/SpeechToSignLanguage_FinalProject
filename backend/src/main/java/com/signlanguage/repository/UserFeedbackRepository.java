@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,7 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.signlanguage.entity.UserFeedback;
 
 public interface UserFeedbackRepository extends JpaRepository<UserFeedback, Long> {
+	// Eagerly fetch the to-one relations the response mapping reads (user,
+	// history) so listing feedback is a single query, not an N+1 lazy-load.
+	@Override
+	@EntityGraph(attributePaths = {"user", "history"})
+	Page<UserFeedback> findAll(Pageable pageable);
+
+	@EntityGraph(attributePaths = {"user", "history"})
 	Page<UserFeedback> findByUserUserId(Long userId, Pageable pageable);
+	@EntityGraph(attributePaths = {"user", "history"})
 	Page<UserFeedback> findByUserUserIdAndHistoryHistoryId(Long userId, Long historyId, Pageable pageable);
 
 	// Free-text search over the linked translation text and the feedback comment.

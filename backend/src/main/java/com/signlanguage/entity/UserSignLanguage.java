@@ -2,6 +2,7 @@ package com.signlanguage.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -30,6 +31,9 @@ public class UserSignLanguage {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
+    // Batch the eager role fetch so listing many users doesn't do one roles
+    // query per user (N+1). Permissions under each role are batched too.
+    @BatchSize(size = 100)
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 

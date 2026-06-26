@@ -5,6 +5,7 @@ import com.signlanguage.entity.DictionaryCacheSource;
 import com.signlanguage.entity.DictionaryEntryType;
 import com.signlanguage.entity.SignDictionary;
 import com.signlanguage.entity.UserSignLanguage;
+import com.signlanguage.repository.SignDictionaryListView;
 import com.signlanguage.repository.SignDictionaryRepository;
 import com.signlanguage.repository.UserSLRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,11 +27,12 @@ public class SignDictionaryService {
 
     @Transactional(readOnly = true)
     public Page<Map<String, Object>> search(String q, Pageable pageable) {
-        Page<SignDictionary> data = (q == null || q.isBlank())
-            ? dictionaryRepository.findAll(pageable)
-            : dictionaryRepository.findByEnglishTextContainingIgnoreCaseOrNormalizedTextContainingIgnoreCase(q, q, pageable);
-
-        return data.map(this::toResponse);
+        // Use a projection that excludes pose_data so listing never drags the
+        // pose binaries out of the DB. An empty term matches every row.
+        String term = q == null ? "" : q.trim();
+        return dictionaryRepository
+                .findByEnglishTextContainingIgnoreCaseOrNormalizedTextContainingIgnoreCase(term, term, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -135,6 +137,21 @@ public class SignDictionaryService {
     }
 
     private Map<String, Object> toResponse(SignDictionary dictionary) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("wordId", dictionary.getWordId());
+        result.put("englishText", dictionary.getEnglishText());
+        result.put("normalizedText", dictionary.getNormalizedText() == null ? "" : dictionary.getNormalizedText());
+        result.put("entryType", dictionary.getEntryType() == null ? null : dictionary.getEntryType().name());
+        result.put("spokenLang", dictionary.getSpokenLang() == null ? "" : dictionary.getSpokenLang());
+        result.put("signedLang", dictionary.getSignedLang() == null ? "" : dictionary.getSignedLang());
+        result.put("cacheSource", dictionary.getCacheSource() == null ? null : dictionary.getCacheSource().name());
+        result.put("poseFilePath", dictionary.getPoseFilePath() == null ? "" : dictionary.getPoseFilePath());
+        return result;
+    }
+
+    // Same shape as the entity mapper above, but fed by the lightweight list
+    // projection (no pose_data loaded).
+    private Map<String, Object> toResponse(SignDictionaryListView dictionary) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("wordId", dictionary.getWordId());
         result.put("englishText", dictionary.getEnglishText());
