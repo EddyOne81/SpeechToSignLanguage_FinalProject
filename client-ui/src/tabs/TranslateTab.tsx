@@ -111,7 +111,7 @@ export default function TranslateTab({
                 <textarea
                   value={inputText}
                   onChange={(event) => setInputText(event.target.value)}
-                  placeholder={inputLang === "vi" ? "Type Vietnamese text. Example: Xin chào" : "Type English text. Example: Hello"}
+                  placeholder={inputLang === "vi" ? "Hãy nhập văn bản tiếng Việt. Ví dụ: Xin chào" : "Type English text. Example: Hello"}
                   className="ui-input h-24 w-full rounded-lg px-3 py-2 text-sm"
                 />
                 <button
