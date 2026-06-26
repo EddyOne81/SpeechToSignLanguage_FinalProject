@@ -35,4 +35,8 @@ public interface UserFeedbackRepository extends JpaRepository<UserFeedback, Long
 	@Transactional
 	long deleteByHistoryUserUserId(Long userId);
 
+	@Modifying
+	@Transactional
+	long deleteByUserUserId(Long userId);
+
 }

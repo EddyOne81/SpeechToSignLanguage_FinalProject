@@ -1,7 +1,6 @@
-import React from "react";
 import { AlertCircle, Loader2, RefreshCw, Search, Trash2 } from "lucide-react";
 import { formatDate } from "../utils/format";
-import type { FeedbackFormData, HistoryItem, TabType } from "../types";
+import type { HistoryItem } from "../types";
 import {
   Select,
   SelectContent,
@@ -20,12 +19,22 @@ interface HistoryTabProps {
   historyTotalElements: number;
   historyLoading: boolean;
   historyError: string | null;
-  loadHistories: (targetPage?: number, overrideQuery?: string) => Promise<void>;
+  loadHistories: (
+    targetPage?: number,
+    overrideQuery?: string,
+    overrideSort?: "latest" | "oldest",
+  ) => Promise<void>;
   deleteHistory: (historyId: number) => Promise<void>;
   deleteAllHistories: () => Promise<void>;
   replayHistory: (text?: string) => void;
-  setFeedbackForm: React.Dispatch<React.SetStateAction<FeedbackFormData>>;
-  setActiveTab: (tab: TabType) => void;
+  historySort: "latest" | "oldest";
+  setHistorySort: (v: "latest" | "oldest") => void;
+  openFeedbackModal: (payload: {
+    historyId: number;
+    historyText?: string;
+    rating?: number;
+    comment?: string;
+  }) => void;
 }
 
 export default function HistoryTab({
@@ -42,8 +51,9 @@ export default function HistoryTab({
   deleteHistory,
   deleteAllHistories,
   replayHistory,
-  setFeedbackForm,
-  setActiveTab,
+  historySort,
+  setHistorySort,
+  openFeedbackModal,
 }: HistoryTabProps) {
   return (
     <div className="flex min-h-[420px] flex-1 flex-col glass-panel rounded-2xl p-5 shadow-lg">
@@ -66,6 +76,23 @@ export default function HistoryTab({
             placeholder="Search by ID or text..."
             className="ui-input min-w-[260px] flex-1 rounded-lg px-3 py-2 text-sm md:max-w-md"
           />
+          <Select
+            variant="ui"
+            value={historySort}
+            onValueChange={(v) => {
+              const sort = v as "latest" | "oldest";
+              setHistorySort(sort);
+              void loadHistories(0, historyQuery, sort);
+            }}
+          >
+            <SelectTrigger className="w-32 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="latest">Latest</SelectItem>
+              <SelectItem value="oldest">Oldest</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-2">
             <button
               onClick={() => void loadHistories(0)}
@@ -137,13 +164,12 @@ export default function HistoryTab({
                     Replay
                   </button>
                   <button
-                    onClick={() => {
-                      setFeedbackForm((prev) => ({
-                        ...prev,
-                        historyId: String(item.historyId),
-                      }));
-                      setActiveTab("feedback");
-                    }}
+                    onClick={() =>
+                      openFeedbackModal({
+                        historyId: item.historyId,
+                        historyText: item.inputText,
+                      })
+                    }
                     className="ui-pill-neutral rounded-full px-3 py-1 text-[11px] uppercase transition">
                     Feedback
                   </button>

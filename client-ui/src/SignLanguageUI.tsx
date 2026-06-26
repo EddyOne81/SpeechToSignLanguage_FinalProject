@@ -8,6 +8,7 @@ import DictionaryTab from "./tabs/DictionaryTab";
 import HistoryTab from "./tabs/HistoryTab";
 import FeedbackTab from "./tabs/FeedbackTab";
 import AccountTab from "./tabs/AccountTab";
+import FeedbackModal from "./components/FeedbackModal";
 import {
   BACKEND_BASE_URL,
   extractErrorMessage,
@@ -21,7 +22,6 @@ import {
 import { recordedBlobToWav } from "./utils/audio";
 import type {
   DictionaryItem,
-  FeedbackFormData,
   FeedbackItem,
   FeedbackSortType,
   HistoryItem,
@@ -100,6 +100,7 @@ export default function SignLanguageUI({
   const [dictTotalElements, setDictTotalElements] = useState(0);
   const [dictLoading, setDictLoading] = useState(false);
   const [dictError, setDictError] = useState<string | null>(null);
+  const [dictSort, setDictSort] = useState<"az" | "za">("az");
 
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [historyQuery, setHistoryQuery] = useState("");
@@ -109,6 +110,7 @@ export default function SignLanguageUI({
   const [historyTotalElements, setHistoryTotalElements] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historySort, setHistorySort] = useState<"latest" | "oldest">("latest");
 
   const [feedbackItems, setFeedbackItems] = useState<FeedbackItem[]>([]);
   const [feedbackPage, setFeedbackPage] = useState(0);
@@ -118,13 +120,15 @@ export default function SignLanguageUI({
   const [feedbackSearch, setFeedbackSearch] = useState("");
   const [feedbackSort, setFeedbackSort] = useState<FeedbackSortType>("latest");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
-  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  const [feedbackForm, setFeedbackForm] = useState<FeedbackFormData>({
-    historyId: "",
-    rating: "5",
-    comment: "",
-  });
+  // Feedback is now created/edited through a modal opened from a history item
+  // (or the feedback list's Edit button), not an inline form.
+  const [feedbackModal, setFeedbackModal] = useState<{
+    historyId: number;
+    historyText?: string;
+    rating: number;
+    comment: string;
+  } | null>(null);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -434,13 +438,18 @@ export default function SignLanguageUI({
     onLogout?.();
   };
 
-  const loadDictionary = async (targetPage = dictPage, overrideQuery?: string) => {
+  const loadDictionary = async (
+    targetPage = dictPage,
+    overrideQuery?: string,
+    overrideSort?: "az" | "za",
+  ) => {
     setDictLoading(true);
     setDictError(null);
     try {
       const query = (overrideQuery ?? dictQuery).trim();
+      const sort = (overrideSort ?? dictSort) === "za" ? "englishText,desc" : "englishText,asc";
       const response = await apiRequest(
-        `/api/dictionaries?q=${encodeURIComponent(query)}&page=${targetPage}&size=${dictSize}`,
+        `/api/dictionaries?q=${encodeURIComponent(query)}&page=${targetPage}&size=${dictSize}&sort=${sort}`,
       );
       const pageData = extractPageContent(response);
       const content = pageData.content || [];
@@ -463,7 +472,11 @@ export default function SignLanguageUI({
     }
   };
 
-  const loadHistories = async (targetPage = historyPage, overrideQuery?: string) => {
+  const loadHistories = async (
+    targetPage = historyPage,
+    overrideQuery?: string,
+    overrideSort?: "latest" | "oldest",
+  ) => {
     if (!authUser) {
       setHistoryItems([]);
       setHistoryTotalPages(0);
@@ -488,8 +501,9 @@ export default function SignLanguageUI({
         setHistoryPage(0);
       } else {
         const qParam = query ? `&q=${encodeURIComponent(query)}` : "";
+        const sort = (overrideSort ?? historySort) === "oldest" ? "createdAt,asc" : "createdAt,desc";
         const response = await apiRequest(
-          `/api/histories/me?page=${targetPage}&size=${historySize}${qParam}`,
+          `/api/histories/me?page=${targetPage}&size=${historySize}${qParam}&sort=${sort}`,
         );
         const pageData = extractPageContent(response);
         const content = pageData.content || [];
@@ -564,56 +578,70 @@ export default function SignLanguageUI({
     }
   };
 
-  const submitFeedback = async () => {
+  const openFeedbackModal = async (payload: {
+    historyId: number;
+    historyText?: string;
+    rating?: number;
+    comment?: string;
+  }) => {
+    let rating = payload.rating;
+    let comment = payload.comment;
+    // Opened from a history item (no values passed): prefill with the existing
+    // feedback for that history if there is one, so re-rating shows what they
+    // gave before instead of silently overwriting it with defaults.
+    if (rating === undefined && authUser) {
+      try {
+        const res = await apiRequest(
+          `/api/feedbacks/me?page=0&size=1&historyId=${payload.historyId}`,
+        );
+        const page = extractPageContent(res);
+        const existing = (page.content || []).find(
+          (item: FeedbackItem) => Number(item.historyId) === payload.historyId,
+        );
+        if (existing) {
+          rating = existing.rating;
+          comment = existing.comment;
+        }
+      } catch {
+        // ignore — fall back to defaults
+      }
+    }
+    setFeedbackModal({
+      historyId: payload.historyId,
+      historyText: payload.historyText,
+      rating: rating ?? 5,
+      comment: comment ?? "",
+    });
+  };
+
+  // Create the feedback for a history, or update it if one already exists.
+  // Throws on failure so the modal can surface the error inline.
+  const upsertFeedback = async (
+    historyId: number,
+    rating: number,
+    comment: string,
+  ) => {
     if (!authUser) {
-      setFeedbackError("Login required.");
-      return;
+      throw new Error("Login required.");
     }
-    const historyId = Number(feedbackForm.historyId);
-    const rating = Number(feedbackForm.rating);
+    const existingResponse = await apiRequest(
+      `/api/feedbacks/me?page=0&size=1&historyId=${historyId}`,
+    );
+    const existingPage = extractPageContent(existingResponse);
+    const existingItem = (existingPage.content || []).find(
+      (item: FeedbackItem) => Number(item.historyId) === historyId,
+    );
 
-    if (!Number.isInteger(historyId) || historyId <= 0) {
-      setFeedbackError("History ID must be a positive integer.");
-      return;
-    }
-    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      setFeedbackError("Rating must be between 1 and 5.");
-      return;
-    }
+    const method = existingItem ? "PUT" : "POST";
+    const path = existingItem
+      ? `/api/feedbacks/me/${existingItem.feedbackId}`
+      : "/api/feedbacks/me";
 
-    setFeedbackSubmitting(true);
-    setFeedbackError(null);
-    try {
-      await apiRequest(`/api/histories/me/${historyId}`);
-
-      const existingResponse = await apiRequest(
-        `/api/feedbacks/me?page=0&size=1&historyId=${historyId}`,
-      );
-      const existingPage = extractPageContent(existingResponse);
-      const existingItem = (existingPage.content || []).find(
-        (item: FeedbackItem) => Number(item.historyId) === historyId,
-      );
-
-      const method = existingItem ? "PUT" : "POST";
-      const path = existingItem
-        ? `/api/feedbacks/me/${existingItem.feedbackId}`
-        : "/api/feedbacks/me";
-
-      await apiRequest(path, {
-        method,
-        body: JSON.stringify({
-          historyId,
-          rating,
-          comment: feedbackForm.comment,
-        }),
-      });
-      setFeedbackForm({ historyId: "", rating: "5", comment: "" });
-      void loadFeedbacks(0);
-    } catch (err: any) {
-      setFeedbackError(err.message || "Failed to submit feedback.");
-    } finally {
-      setFeedbackSubmitting(false);
-    }
+    await apiRequest(path, {
+      method,
+      body: JSON.stringify({ historyId, rating, comment }),
+    });
+    void loadFeedbacks(0);
   };
 
   const deleteHistory = async (historyId: number) => {
@@ -940,6 +968,8 @@ export default function SignLanguageUI({
             dictTotalElements={dictTotalElements}
             dictLoading={dictLoading}
             dictError={dictError}
+            dictSort={dictSort}
+            setDictSort={setDictSort}
             loadDictionary={loadDictionary}
             setInputText={setInputText}
             setActiveTab={setActiveTab}
@@ -958,12 +988,13 @@ export default function SignLanguageUI({
             historyTotalElements={historyTotalElements}
             historyLoading={historyLoading}
             historyError={historyError}
+            historySort={historySort}
+            setHistorySort={setHistorySort}
             loadHistories={loadHistories}
             deleteHistory={deleteHistory}
             deleteAllHistories={deleteAllHistories}
             replayHistory={replayHistory}
-            setFeedbackForm={setFeedbackForm}
-            setActiveTab={setActiveTab}
+            openFeedbackModal={openFeedbackModal}
           />
         )}
 
@@ -979,14 +1010,11 @@ export default function SignLanguageUI({
             feedbackSort={feedbackSort}
             setFeedbackSort={setFeedbackSort}
             feedbackLoading={feedbackLoading}
-            feedbackSubmitting={feedbackSubmitting}
             feedbackError={feedbackError}
-            feedbackForm={feedbackForm}
-            setFeedbackForm={setFeedbackForm}
             loadFeedbacks={loadFeedbacks}
-            submitFeedback={submitFeedback}
             deleteFeedback={deleteFeedback}
             openHistoryFromFeedback={openHistoryFromFeedback}
+            openFeedbackModal={openFeedbackModal}
           />
         )}
 
@@ -1023,6 +1051,17 @@ export default function SignLanguageUI({
           <AppFooter />
         </div>
       </div>
+
+      <FeedbackModal
+        open={feedbackModal !== null}
+        historyText={feedbackModal?.historyText}
+        initialRating={feedbackModal?.rating ?? 5}
+        initialComment={feedbackModal?.comment ?? ""}
+        onClose={() => setFeedbackModal(null)}
+        onSubmit={(rating, comment) =>
+          upsertFeedback(feedbackModal!.historyId, rating, comment)
+        }
+      />
     </div>
   );
 }

@@ -193,10 +193,8 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold text-neutral-300">System Notes</h2>
         </div>
         <ul className="space-y-2 text-sm text-neutral-400">
-          <li>• All user data and translations are stored in PostgreSQL.</li>
           <li>• Dictionary entries with <span className="text-sky-400 font-medium">AUTO_CACHED</span> are generated automatically after successful Sign-MT translations.</li>
           <li>• <span className="text-amber-400 font-medium">SEED</span> entries are loaded from the initial dataset. <span className="text-emerald-400 font-medium">MANUAL</span> entries are added by admins.</li>
-          <li>• Pose files are cached on disk at <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-indigo-300 text-xs">data/pose_cache/</code> on the AI service.</li>
         </ul>
       </div>
     </div>

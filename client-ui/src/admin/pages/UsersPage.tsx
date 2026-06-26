@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Trash2, UserCog } from "lucide-react";
+import { ShieldCheck, Trash2, UserCog } from "lucide-react";
 import { adminFetch, unwrapPage } from "../utils";
 import Pagination from "../Pagination";
 import {
@@ -71,7 +71,7 @@ export default function UsersPage() {
     try {
       await adminFetch(`/api/users/${user.userId}`, {
         method: "PUT",
-        body: JSON.stringify({ roleNames: [newRole] }),
+        body: JSON.stringify({ roleCodes: [newRole] }),
       });
       await load(page);
     } catch (err: any) {
@@ -207,28 +207,38 @@ export default function UsersPage() {
                         {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() =>
-                              setRoleEditing((prev) => ({
-                                ...prev,
-                                [u.userId]: isAdmin ? "ROLE_USER" : "ROLE_ADMIN",
-                              }))
-                            }
-                            title="Change role"
-                            className="rounded p-1.5 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 transition-colors"
+                        {isAdmin ? (
+                          <span
+                            className="inline-flex items-center gap-1.5 text-xs text-neutral-500"
+                            title="Admin accounts cannot be changed or deleted here"
                           >
-                            <UserCog className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => void handleDelete(u.userId)}
-                            disabled={deleting[u.userId]}
-                            title="Delete user"
-                            className="rounded p-1.5 text-rose-400 hover:bg-rose-900/30 hover:text-rose-300 transition-colors disabled:opacity-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
+                            <ShieldCheck className="h-4 w-4 text-amber-400" />
+                            Protected
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() =>
+                                setRoleEditing((prev) => ({
+                                  ...prev,
+                                  [u.userId]: "ROLE_ADMIN",
+                                }))
+                              }
+                              title="Change role"
+                              className="rounded p-1.5 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 transition-colors"
+                            >
+                              <UserCog className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => void handleDelete(u.userId)}
+                              disabled={deleting[u.userId]}
+                              title="Delete user"
+                              className="rounded p-1.5 text-rose-400 hover:bg-rose-900/30 hover:text-rose-300 transition-colors disabled:opacity-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );

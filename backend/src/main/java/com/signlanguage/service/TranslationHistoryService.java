@@ -8,7 +8,9 @@ import com.signlanguage.repository.TranslationHistoryRepository;
 import com.signlanguage.repository.UserFeedbackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +29,15 @@ public class TranslationHistoryService {
 	@Transactional(readOnly = true)
 	public Page<Map<String, Object>> getMyHistories(String query, Pageable pageable) {
 		UserSignLanguage user = currentUserService.requireCurrentUser();
+		// Default to newest-first when the client doesn't ask for a specific order.
+		Pageable effective = pageable.getSort().isSorted()
+				? pageable
+				: PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
 		if (query != null && !query.isBlank()) {
-			return historyRepository.findByUserUserIdAndInputTextContainingIgnoreCaseOrderByCreatedAtDesc(user.getUserId(), query, pageable)
+			return historyRepository.findByUserUserIdAndInputTextContainingIgnoreCase(user.getUserId(), query, effective)
 					.map(this::toResponse);
 		}
-		return historyRepository.findByUserUserIdOrderByCreatedAtDesc(user.getUserId(), pageable)
+		return historyRepository.findByUserUserId(user.getUserId(), effective)
 				.map(this::toResponse);
 	}
 

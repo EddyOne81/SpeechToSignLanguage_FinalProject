@@ -6,6 +6,8 @@ import com.signlanguage.dto.UpsertUserRequest;
 import com.signlanguage.entity.Role;
 import com.signlanguage.entity.UserSignLanguage;
 import com.signlanguage.repository.RoleRepository;
+import com.signlanguage.repository.TranslationHistoryRepository;
+import com.signlanguage.repository.UserFeedbackRepository;
 import com.signlanguage.repository.UserSLRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,6 +29,14 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserService currentUserService;
+    private final TranslationHistoryRepository historyRepository;
+    private final UserFeedbackRepository feedbackRepository;
+
+    private static final String ADMIN_ROLE = "ROLE_ADMIN";
+
+    private boolean isAdmin(UserSignLanguage user) {
+        return user.getRoles().stream().anyMatch(r -> ADMIN_ROLE.equals(r.getCode()));
+    }
 
     @Transactional(readOnly = true)
     public Map<String, Object> me() {
@@ -121,6 +131,10 @@ public class UserService {
         }
 
         if (request.getRoleCodes() != null && !request.getRoleCodes().isEmpty()) {
+            // Admin accounts are protected: their role cannot be changed from the panel.
+            if (isAdmin(user)) {
+                throw new RuntimeException("Admin roles cannot be changed.");
+            }
             user.setRoles(resolveRoles(request.getRoleCodes()));
         }
 
@@ -130,10 +144,17 @@ public class UserService {
 
     @Transactional
     public Map<String, Object> deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found");
+        UserSignLanguage user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        // Admin accounts are protected and can never be deleted from the panel.
+        if (isAdmin(user)) {
+            throw new RuntimeException("Admin accounts cannot be deleted.");
         }
-        userRepository.deleteById(id);
+        // Remove dependent rows first so FK constraints don't block the delete:
+        // a user's feedbacks reference both the user and their histories.
+        feedbackRepository.deleteByUserUserId(id);
+        historyRepository.deleteByUserUserId(id);
+        userRepository.delete(user);
         return Map.of("deleted", true);
     }
 

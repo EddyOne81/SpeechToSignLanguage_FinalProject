@@ -17,7 +17,13 @@ interface DictionaryTabProps {
   dictTotalElements: number;
   dictLoading: boolean;
   dictError: string | null;
-  loadDictionary: (targetPage?: number, overrideQuery?: string) => Promise<void>;
+  dictSort: "az" | "za";
+  setDictSort: (v: "az" | "za") => void;
+  loadDictionary: (
+    targetPage?: number,
+    overrideQuery?: string,
+    overrideSort?: "az" | "za",
+  ) => Promise<void>;
   setInputText: (text: string) => void;
   setActiveTab: (tab: TabType) => void;
   startTextTranslation: (overrideText?: string) => Promise<void>;
@@ -32,6 +38,8 @@ export default function DictionaryTab({
   dictTotalElements,
   dictLoading,
   dictError,
+  dictSort,
+  setDictSort,
   loadDictionary,
   setInputText,
   setActiveTab,
@@ -90,13 +98,32 @@ export default function DictionaryTab({
       </div>
 
       <div className="flex min-h-0 flex-col overflow-hidden glass-panel rounded-2xl p-5 shadow-lg xl:col-span-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold ">
             Results
           </h3>
-          <span className="text-xs text-slate-500">
-            {dictTotalElements} items
-          </span>
+          <div className="flex items-center gap-2">
+            <Select
+              variant="ui"
+              value={dictSort}
+              onValueChange={(v) => {
+                const sort = v as "az" | "za";
+                setDictSort(sort);
+                void loadDictionary(0, dictQuery, sort);
+              }}
+            >
+              <SelectTrigger className="w-28 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="az">A → Z</SelectItem>
+                <SelectItem value="za">Z → A</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-slate-500">
+              {dictTotalElements} items
+            </span>
+          </div>
         </div>
         <div className="mt-4 flex-1 min-h-0 space-y-3 overflow-y-auto">
           {dictLoading ? (
