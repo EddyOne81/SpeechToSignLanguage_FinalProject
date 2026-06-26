@@ -129,6 +129,9 @@ export default function SignLanguageUI({
     rating: number;
     comment: string;
   } | null>(null);
+  // Transient success toast (e.g. after submitting feedback). A fresh object is
+  // set on each show so the auto-dismiss effect re-runs even for repeat messages.
+  const [toast, setToast] = useState<{ message: string } | null>(null);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -148,6 +151,12 @@ export default function SignLanguageUI({
   useEffect(() => {
     localStorage.setItem("s2s_theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 3500);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     localStorage.setItem("s2s_sidebar_collapsed", String(isSidebarCollapsed));
@@ -641,6 +650,11 @@ export default function SignLanguageUI({
       method,
       body: JSON.stringify({ historyId, rating, comment }),
     });
+    setToast({
+      message: existingItem
+        ? "Feedback updated successfully."
+        : "Feedback submitted. Thank you!",
+    });
     void loadFeedbacks(0);
   };
 
@@ -1062,6 +1076,17 @@ export default function SignLanguageUI({
           upsertFeedback(feedbackModal!.historyId, rating, comment)
         }
       />
+
+      {toast && (
+        <div
+          className="fixed bottom-6 left-1/2 z-[9999] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/15 px-5 py-3 text-emerald-300 shadow-2xl backdrop-blur-sm"
+          style={{ maxWidth: "420px", width: "calc(100vw - 2rem)" }}
+          role="status"
+        >
+          <span className="text-lg leading-none">✓</span>
+          <p className="text-sm font-medium">{toast.message}</p>
+        </div>
+      )}
     </div>
   );
 }
