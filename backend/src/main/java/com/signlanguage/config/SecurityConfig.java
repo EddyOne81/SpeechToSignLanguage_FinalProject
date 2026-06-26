@@ -60,6 +60,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", "/api/auth/me").permitAll()
                 .requestMatchers("/api/auth/verify-email", "/api/auth/resend-verification").permitAll()
                 .requestMatchers("/api/translate/**").permitAll()
+                // Dictionary is public reference data: anyone (incl. anonymous)
+                // may read it. Only GET is opened — create/update/delete stay
+                // protected by @PreAuthorize + authentication below.
+                .requestMatchers(HttpMethod.GET, "/api/dictionaries", "/api/dictionaries/**").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .anyRequest().authenticated()
             )
